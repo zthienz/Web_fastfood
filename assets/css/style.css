@@ -10,51 +10,57 @@ header {
     background-color: #ff5722;
     color: white;
     padding: 15px 20px;
-    display: flex;               /* thêm */
-    justify-content: space-between; /* chia trái – phải */
+    display: flex;
+    justify-content: space-between; /* logo trái – menu giữa – login phải */
     align-items: center;
+}
+
+/* Menu giữa */
+nav {
+    flex: 1;                      /* chiếm toàn bộ khoảng giữa */
+    display: flex;
+    justify-content: center;      /* căn giữa các menu <a> */
+    align-items: center;
+    gap: 30px;                    /* giãn cách menu */
 }
 
 nav a {
     color: white;
-    margin: 0 15px;
     text-decoration: none;
     font-weight: bold;
+    font-size: 17px;
+    transition: 0.2s;
 }
 
 nav a:hover {
     text-decoration: underline;
+    opacity: 0.8;
 }
 
-/* --- Căn phải nút Đăng ký – Đăng nhập --- */
-nav {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 20px;
-}
-
+/* Khu vực đăng nhập / đăng ký bên phải */
 .nav-right {
-    margin-left: auto; /* đẩy sang phải */
     display: flex;
-    gap: 15px;
+    gap: 12px;
 }
 
-/* Style nút button */
-nav button {
+/* Style nút */
+.nav-right button {
     background-color: white;
     color: #ff5722;
-    border: none;
-    padding: 8px 15px;
+    border: 2px solid #ffffff;   /* thêm khung trắng */
+    padding: 8px 18px;
     font-weight: bold;
-    border-radius: 6px;
+    border-radius: 20px;         /* bo tròn đẹp */
     cursor: pointer;
+    transition: 0.25s ease;
 }
 
-nav button:hover {
-    background-color: #ffe1d6;
+/* Hiệu ứng hover */
+.nav-right button:hover {
+    background-color: #ffccbc;   /* cam nhạt */
+    border-color: white;
+    transform: scale(1.05);
 }
-
 
 /* Banner */
 .banner {
