@@ -17,49 +17,45 @@ header {
 
 /* Menu giữa */
 nav {
-    flex: 1;                      /* chiếm toàn bộ khoảng giữa */
+    flex: 1;                      /* cho nav giãn chiếm khoảng giữa */
     display: flex;
-    justify-content: center;      /* căn giữa các menu <a> */
+    justify-content: center;      /* căn giữa menu */
     align-items: center;
-    gap: 30px;                    /* giãn cách menu */
+    gap: 20px;
 }
 
 nav a {
     color: white;
+    margin: 0 15px;
     text-decoration: none;
     font-weight: bold;
-    font-size: 17px;
-    transition: 0.2s;
 }
 
 nav a:hover {
     text-decoration: underline;
-    opacity: 0.8;
 }
 
-/* Khu vực đăng nhập / đăng ký bên phải */
+/* Nút đăng nhập – đăng ký bên phải */
 .nav-right {
     display: flex;
-    gap: 12px;
+    gap: 15px;
 }
 
-/* Style nút */
+/* Style nút button */
+nav button, 
 .nav-right button {
     background-color: white;
     color: #ff5722;
-    border: 2px solid #ffffff;   /* thêm khung trắng */
-    padding: 8px 18px;
+    border: none;
+    padding: 8px 15px;
     font-weight: bold;
-    border-radius: 20px;         /* bo tròn đẹp */
+    border-radius: 6px;
     cursor: pointer;
-    transition: 0.25s ease;
 }
 
-/* Hiệu ứng hover */
+nav button:hover, 
 .nav-right button:hover {
-    background-color: #ffccbc;   /* cam nhạt */
-    border-color: white;
-    transform: scale(1.05);
+    background-color: #ffe1d6;
 }
 
 /* Banner */
