@@ -30,6 +30,63 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
     <title>Đăng nhập hệ thống</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
+        <style>
+        body {
+            font-family: Arial;
+            background: #f5f5f5;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        table {
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            width: 350px;
+        }
+
+        table td {
+            padding: 8px 5px;
+            font-size: 16px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 95%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #e64a19;
+        }
+
+        a {
+            color: #ff5722;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    
 </head>
 <body>
 
