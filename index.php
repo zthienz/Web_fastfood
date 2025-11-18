@@ -2,53 +2,26 @@
 
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FastFood - Trang chủ</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
-
 <body>
 
     <!-- Header -->
-    <?php session_start(); ?>
-<header>
-    <div class="header-container">
-
-        <!-- Logo -->
-        <div class="logo">
-            <a href="index.php">🍔 <span>FastFood</span></a>
-        </div>
-
-        <!-- Menu -->
-        <nav class="navbar">
-            <ul>
-                <li><a href="index.php">Trang chủ</a></li>
-                <li><a href="menu.php">Thực đơn</a></li>
-                <li><a href="contact.php">Liên hệ</a></li>
-                <li><a href="cart.php">Giỏ hàng</a></li>
-            </ul>
+    <header>
+        <h1>🍔 FastFood</h1>
+        <nav>
+            <a href="index.php">Trang chủ</a>
+            <a href="#">Thực đơn</a>
+            <a href="#">Giỏ hàng</a>
+            <a href="#">Liên hệ</a>
+            <a href="dangky.php">Đăng ký</a>
+            <a href="dangnhap.php">Đăng nhập</a>
         </nav>
-
-        <!-- Search -->
-        <div class="search-box">
-            <form action="search.php" method="GET">
-                <input type="text" name="q" placeholder="Tìm kiếm món ăn...">
-                <button type="submit">🔍</button>
-            </form>
-        </div>
-
-        <!-- Auth -->
-        <div class="auth-buttons">
-            <a href="login.php" class="btn-login">Đăng nhập</a>
-            <a href="register.php" class="btn-register">Đăng ký</a>
-        </div>
-
-    </div>
-</header>
-
+    </header>
 
     <!-- Banner -->
     <div class="banner">
@@ -65,7 +38,7 @@
             $result = $conn->query($sql);
 
             if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
+                while($row = $result->fetch_assoc()) {
                     echo "
                     <div class='food-item'>
                         <img src='assets/images/{$row['hinhAnh']}' alt='{$row['tenMon']}'>
@@ -88,5 +61,4 @@
     </footer>
 
 </body>
-
 </html>
