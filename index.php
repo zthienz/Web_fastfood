@@ -12,16 +12,21 @@
 
     <!-- Header -->
     <header>
-        <h1>🍔 FastFood</h1>
-        <nav>
-            <a href="index.php">Trang chủ</a>
-            <a href="#">Thực đơn</a>
-            <a href="#">Giỏ hàng</a>
-            <a href="#">Liên hệ</a>
-            <a href="dangky.php">Đăng ký</a>
-            <a href="dangnhap.php">Đăng nhập</a>
-        </nav>
-    </header>
+    <h1>🍔 FastFood</h1>
+    <nav>
+        <a href="index.php">Trang chủ</a>
+        <a href="#">Thực đơn</a>
+        <a href="#">Giỏ hàng</a>
+        <a href="#">Liên hệ</a>
+
+        <span class="nav-right">
+            <button onclick="location.href='dangky.php'">Đăng ký</button>
+            <button onclick="location.href='dangnhap.php'">Đăng nhập</button>
+        </span>
+    </nav>
+</header>
+
+
 
     <!-- Banner -->
     <div class="banner">
