@@ -1,37 +1,44 @@
 <?php
 
-class PostController {
+class PostController
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // Hiển thị tất cả sản phẩm dạng grid
-    public function index() {
+    // Hiển thị tất cả bài đăng dạng grid 3 cột
+    public function index()
+    {
         $stmt = $this->db->query("
-            SELECT p.*, pi.image_url as primary_image, c.name as category_name
-            FROM products p
-            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
-            LEFT JOIN categories c ON p.category_id = c.id
-            WHERE p.status = 'active'
-            ORDER BY p.created_at DESC
+            SELECT p.*, u.full_name as author_name
+            FROM posts p
+            LEFT JOIN users u ON p.author_id = u.id
+            WHERE p.status = 'published'
+            ORDER BY p.published_at DESC
         ");
-        $products = $stmt->fetchAll();
+        $posts = $stmt->fetchAll();
 
         require_once 'views/posts/index.php';
     }
 
-    // Hiển thị chi tiết 1 sản phẩm
-    public function show() {
-        $id = $_GET['id'] ?? 1;
+    // Hiển thị chi tiết 1 bài đăng
+    public function show()
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+        if ($id <= 0) {
+            header('Location: index.php?page=posts');
+            exit;
+        }
 
         $stmt = $this->db->prepare("
-            SELECT p.*, pi.image_url as primary_image, c.name as category_name
-            FROM products p
-            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
-            LEFT JOIN categories c ON p.category_id = c.id
-            WHERE p.id = ?
+            SELECT p.*, u.full_name as author_name
+            FROM posts p
+            LEFT JOIN users u ON p.author_id = u.id
+            WHERE p.id = ? AND p.status = 'published'
         ");
         $stmt->execute([$id]);
         $post = $stmt->fetch();
@@ -40,6 +47,9 @@ class PostController {
             header('Location: index.php?page=posts');
             exit;
         }
+
+        // Tăng lượt xem
+        $this->db->prepare("UPDATE posts SET views = views + 1 WHERE id = ?")->execute([$id]);
 
         require_once 'views/posts/article.php';
     }

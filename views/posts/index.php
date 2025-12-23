@@ -1,172 +1,119 @@
 <?php
-$pageTitle = 'Tất cả sản phẩm';
+$pageTitle = 'Bài đăng';
 require_once 'views/layouts/header.php';
 ?>
 
 <div class="container">
-    <h1 class="page-title">Tất cả sản phẩm</h1>
-    
-    <div class="products-grid">
-        <?php if (!empty($products)): ?>
-            <?php foreach ($products as $product): ?>
-                <div class="product-card">
-                    <div class="product-image">
-                        <?php 
-                        $image = $product['primary_image'] ?? $product['image'] ?? 'public/images/products/default.jpg';
-                        ?>
-                        <img src="<?= asset($image) ?>" alt="<?= e($product['name']) ?>">
-                        <?php if ($product['sale_price']): ?>
-                            <span class="sale-badge">Giảm giá</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name"><?= e($product['name']) ?></h3>
-                        <p class="product-desc"><?= e(mb_substr($product['description'] ?? '', 0, 80)) ?>...</p>
-                        <div class="product-price">
-                            <?php if ($product['sale_price']): ?>
-                                <span class="price-old"><?= formatMoney($product['price']) ?></span>
-                                <span class="price-sale"><?= formatMoney($product['sale_price']) ?></span>
-                            <?php else: ?>
-                                <span class="price"><?= formatMoney($product['price']) ?></span>
-                            <?php endif; ?>
+    <div class="posts-grid">
+        <?php if (!empty($posts)): ?>
+            <?php foreach ($posts as $post): ?>
+                <div class="post-card">
+                    <a href="index.php?page=post&amp;id=<?php echo (int)$post['id']; ?>" class="post-link">
+                        <div class="post-image">
+                            <?php 
+                            $image = !empty($post['featured_image']) ? $post['featured_image'] : 'public/images/products/default.jpg';
+                            ?>
+                            <img src="<?php echo asset($image); ?>" alt="<?php echo e($post['title']); ?>">
                         </div>
-                        <a href="index.php?page=post&id=<?= $product['id'] ?>" class="btn btn-detail">Xem chi tiết</a>
-                    </div>
+                        <div class="post-content">
+                            <h3 class="post-title"><?php echo e($post['title']); ?></h3>
+                            <p class="post-excerpt"><?php echo e($post['excerpt'] ?? mb_substr(strip_tags($post['content']), 0, 100)); ?>...</p>
+                        </div>
+                    </a>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p class="no-products">Chưa có sản phẩm nào.</p>
+            <p class="no-posts">Chưa có bài đăng nào.</p>
         <?php endif; ?>
     </div>
 </div>
 
 <style>
-.page-title {
-    text-align: center;
-    margin: 30px 0;
-    color: #333;
-}
-
-.products-grid {
+.posts-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
-    padding: 20px 0;
+    gap: 30px;
+    padding: 40px 0;
 }
 
-.product-card {
+.post-card {
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
     overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
 }
 
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+.post-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
 }
 
-.product-image {
-    position: relative;
-    height: 200px;
+.post-link {
+    text-decoration: none;
+    display: block;
+}
+
+.post-image {
+    width: 100%;
+    height: 220px;
     overflow: hidden;
 }
 
-.product-image img {
+.post-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
 }
 
-.sale-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #e74c3c;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    font-weight: bold;
+.post-card:hover .post-image img {
+    transform: scale(1.05);
 }
 
-.product-info {
-    padding: 15px;
+.post-content {
+    padding: 20px;
 }
 
-.product-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-    line-height: 1.3;
-}
-
-.product-desc {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 10px;
-    line-height: 1.5;
-    min-height: 40px;
-}
-
-.product-price {
-    margin-bottom: 12px;
-}
-
-.price {
+.post-title {
     font-size: 18px;
-    font-weight: bold;
-    color: #e74c3c;
+    font-weight: 700;
+    color: #c8102e;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    text-transform: uppercase;
 }
 
-.price-old {
+.post-excerpt {
     font-size: 14px;
-    color: #999;
-    text-decoration: line-through;
-    margin-right: 8px;
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
 }
 
-.price-sale {
-    font-size: 18px;
-    font-weight: bold;
-    color: #e74c3c;
-}
-
-.btn-detail {
-    display: block;
-    text-align: center;
-    background: #ff6b35;
-    color: #fff;
-    padding: 10px 15px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background 0.3s;
-}
-
-.btn-detail:hover {
-    background: #e55a2b;
-}
-
-.no-products {
+.no-posts {
     grid-column: 1 / -1;
     text-align: center;
-    padding: 50px;
-    color: #666;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 16px;
 }
 
-/* Responsive */
 @media (max-width: 992px) {
-    .products-grid {
+    .posts-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
     }
 }
 
 @media (max-width: 576px) {
-    .products-grid {
+    .posts-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px 0;
+    }
+    
+    .post-image {
+        height: 180px;
     }
 }
 </style>
