@@ -15,6 +15,7 @@ require_once 'controllers/MenuController.php';
 require_once 'controllers/CartController.php';
 require_once 'controllers/OrderController.php';
 require_once 'controllers/ProfileController.php';
+require_once 'controllers/PostController.php';
 
 // Admin Controllers
 require_once 'controllers/AdminController.php';
@@ -73,6 +74,11 @@ switch ($page) {
         } else {
             $controller->index();
         }
+        break;
+
+    case 'post':
+        $controller = new PostController();
+        $controller->show();
         break;
         
     case 'cart':

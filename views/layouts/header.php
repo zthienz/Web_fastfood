@@ -12,6 +12,7 @@
         <nav>
             <a href="index.php">Trang chủ</a>
             <a href="index.php?page=menu">Thực đơn</a>
+                <a href="index.php?page=post&action=show&id=1">Bài viết</a>
             <a href="index.php?page=cart">Giỏ hàng</a>
             <a href="#">Liên hệ</a>
         </nav>
