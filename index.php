@@ -76,6 +76,11 @@ switch ($page) {
         }
         break;
 
+    case 'posts':
+        $controller = new PostController();
+        $controller->index();
+        break;
+
     case 'post':
         $controller = new PostController();
         $controller->show();
