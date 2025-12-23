@@ -12,7 +12,7 @@ class MenuController {
             SELECT p.*, c.name as category_name, pi.image_url as primary_image
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
             WHERE p.status = 'active'
             ORDER BY p.name ASC
         ");
@@ -34,7 +34,7 @@ class MenuController {
             SELECT p.*, c.name as category_name, pi.image_url as primary_image
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
-            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
             WHERE p.status = 'active' AND (p.name LIKE ? OR p.description LIKE ?)
             ORDER BY p.name ASC
         ");

@@ -143,6 +143,7 @@ class AdminProductController {
         
         $id = $_POST['id'];
         $name = sanitize($_POST['name']);
+        $slug = $this->generateSlug($name, $id); // Thêm productId để exclude khi check duplicate
         $categoryId = $_POST['category_id'];
         $description = sanitize($_POST['description']);
         $price = $_POST['price'];
@@ -158,11 +159,11 @@ class AdminProductController {
         
         $stmt = $this->db->prepare("
             UPDATE products 
-            SET category_id = ?, name = ?, description = ?, price = ?, sale_price = ?, 
+            SET category_id = ?, name = ?, slug = ?, description = ?, price = ?, sale_price = ?, 
                 stock_quantity = ?, is_featured = ?, status = ?
             WHERE id = ?
         ");
-        $stmt->execute([$categoryId, $name, $description, $price, $salePrice, $stockQuantity, $isFeatured, $status, $id]);
+        $stmt->execute([$categoryId, $name, $slug, $description, $price, $salePrice, $stockQuantity, $isFeatured, $status, $id]);
         
         // Xử lý upload ảnh mới
         $this->handleImageUpload($id);
@@ -186,35 +187,96 @@ class AdminProductController {
         redirect('index.php?page=admin&section=products');
     }
     
-    private function generateSlug($text) {
+    private function generateSlug($text, $productId = null) {
         $text = strtolower($text);
         $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
         $text = preg_replace('/[\s-]+/', '-', $text);
-        return trim($text, '-');
+        $baseSlug = trim($text, '-');
+        
+        $slug = $baseSlug;
+        $counter = 1;
+        
+        // Kiểm tra slug đã tồn tại chưa
+        while ($this->slugExists($slug, $productId)) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        
+        return $slug;
+    }
+    
+    private function slugExists($slug, $excludeId = null) {
+        $sql = "SELECT COUNT(*) FROM products WHERE slug = ?";
+        $params = [$slug];
+        
+        if ($excludeId) {
+            $sql .= " AND id != ?";
+            $params[] = $excludeId;
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        
+        return $stmt->fetchColumn() > 0;
     }
     
     private function handleImageUpload($productId) {
-        if (!isset($_FILES['images'])) return;
+        if (!isset($_FILES['images']) || empty($_FILES['images']['tmp_name'][0])) {
+            return;
+        }
         
         $uploadDir = 'public/images/products/';
-        $order = 1;
         
+        // Tạo thư mục nếu chưa tồn tại
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Trước khi thêm ảnh mới, set tất cả ảnh cũ thành không phải primary
+        $stmt = $this->db->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
+        $stmt->execute([$productId]);
+        
+        $order = 1;
+        $firstImageId = null;
+        
+        // Insert tất cả ảnh
         foreach ($_FILES['images']['tmp_name'] as $key => $tmpName) {
-            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
-                $fileName = time() . '_' . $key . '_' . $_FILES['images']['name'][$key];
+            if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK && !empty($tmpName)) {
+                $originalName = $_FILES['images']['name'][$key];
+                $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                $fileName = time() . '_' . $key . '_' . uniqid() . '.' . $extension;
                 $filePath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($tmpName, $filePath)) {
-                    $isPrimary = ($order === 1) ? 1 : 0;
-                    
-                    $stmt = $this->db->prepare("
-                        INSERT INTO product_images (product_id, image_url, is_primary, display_order)
-                        VALUES (?, ?, ?, ?)
-                    ");
-                    $stmt->execute([$productId, $filePath, $isPrimary, $order]);
-                    
-                    $order++;
+                    try {
+                        // Insert ảnh với is_primary = 0 để tránh trigger
+                        $stmt = $this->db->prepare("
+                            INSERT INTO product_images (product_id, image_url, is_primary, display_order)
+                            VALUES (?, ?, 0, ?)
+                        ");
+                        $stmt->execute([$productId, $filePath, $order]);
+                        
+                        $imageId = $this->db->lastInsertId();
+                        if ($firstImageId === null) {
+                            $firstImageId = $imageId;
+                        }
+                        $order++;
+                    } catch (Exception $e) {
+                        // Nếu lỗi database, xóa file đã upload
+                        unlink($filePath);
+                        error_log("Database error when inserting image: " . $e->getMessage());
+                    }
                 }
+            }
+        }
+        
+        // Sau khi insert xong tất cả, set ảnh đầu tiên làm primary
+        if ($firstImageId !== null) {
+            try {
+                $stmt = $this->db->prepare("UPDATE product_images SET is_primary = 1 WHERE id = ?");
+                $stmt->execute([$firstImageId]);
+            } catch (Exception $e) {
+                error_log("Error setting primary image: " . $e->getMessage());
             }
         }
     }
