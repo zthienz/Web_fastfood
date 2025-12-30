@@ -32,14 +32,16 @@ require_once 'views/layouts/header.php';
                         </div>
                     <?php endif; ?>
                     
-                    <img src="<?= getImageUrl($product['primary_image'] ?? $product['image'] ?? '') ?>" 
-                         alt="<?= e($product['name']) ?>">
-                    <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
-                        <div class="stock-badge out">Hết hàng</div>
-                    <?php elseif ($product['stock_quantity'] <= 5): ?>
-                        <div class="stock-badge low">Còn <?= $product['stock_quantity'] ?></div>
-                    <?php endif; ?>
-                    <h3><?= e($product['name']) ?></h3>
+                    <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" class="product-link">
+                        <img src="<?= getImageUrl($product['primary_image'] ?? $product['image'] ?? '') ?>" 
+                             alt="<?= e($product['name']) ?>">
+                        <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
+                            <div class="stock-badge out">Hết hàng</div>
+                        <?php elseif ($product['stock_quantity'] <= 5): ?>
+                            <div class="stock-badge low">Còn <?= $product['stock_quantity'] ?></div>
+                        <?php endif; ?>
+                        <h3><?= e($product['name']) ?></h3>
+                    </a>
                     <p class="category-badge"><?= e($product['category_name'] ?? '') ?></p>
                     <p><?= e($product['description'] ?? '') ?></p>
                     <div class="price-wrapper">
@@ -113,6 +115,22 @@ require_once 'views/layouts/header.php';
 
 .heart-icon {
     font-size: 16px;
+}
+
+/* Product Link Styles */
+.product-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.3s;
+}
+
+.product-link:hover {
+    transform: translateY(-2px);
+}
+
+.product-link:hover h3 {
+    color: #ff6b35;
 }
 </style>
 

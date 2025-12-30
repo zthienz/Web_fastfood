@@ -106,4 +106,57 @@ class MenuController {
         
         require_once 'views/menu/index.php';
     }
+    
+    public function detail() {
+        $productId = (int)($_GET['id'] ?? 0);
+        
+        if (!$productId) {
+            header('Location: index.php?page=menu');
+            exit;
+        }
+        
+        // Lấy thông tin sản phẩm
+        $sql = "
+            SELECT p.*, c.name as category_name
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE p.id = ? AND p.status = 'active'
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$productId]);
+        $product = $stmt->fetch();
+        
+        if (!$product) {
+            header('Location: index.php?page=menu');
+            exit;
+        }
+        
+        // Cập nhật lượt xem
+        $updateViews = $this->db->prepare("UPDATE products SET views = views + 1 WHERE id = ?");
+        $updateViews->execute([$productId]);
+        $product['views'] = $product['views'] + 1;
+        
+        // Lấy hình ảnh sản phẩm
+        $imagesSql = "SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, id ASC";
+        $imagesStmt = $this->db->prepare($imagesSql);
+        $imagesStmt->execute([$productId]);
+        $images = $imagesStmt->fetchAll();
+        
+        // Lấy sản phẩm liên quan (cùng danh mục)
+        $relatedSql = "
+            SELECT p.*, pi.image_url as primary_image
+            FROM products p
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+            WHERE p.category_id = ? AND p.id != ? AND p.status = 'active'
+            ORDER BY RAND()
+            LIMIT 4
+        ";
+        
+        $relatedStmt = $this->db->prepare($relatedSql);
+        $relatedStmt->execute([$product['category_id'], $productId]);
+        $relatedProducts = $relatedStmt->fetchAll();
+        
+        require_once 'views/menu/detail.php';
+    }
 }

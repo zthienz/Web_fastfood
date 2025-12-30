@@ -534,6 +534,22 @@ footer {
     transform: none;
 }
 
+/* Product Link Styles */
+.food-item .product-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.3s;
+}
+
+.food-item .product-link:hover {
+    transform: translateY(-2px);
+}
+
+.food-item .product-link:hover h3 {
+    color: #ff6b35;
+}
+
 /* Flash Messages */
 .flash-message {
     padding: 15px 20px;

@@ -72,6 +72,8 @@ switch ($page) {
         $controller = new MenuController();
         if ($action === 'search') {
             $controller->search();
+        } elseif ($action === 'detail') {
+            $controller->detail();
         } else {
             $controller->index();
         }
