@@ -16,6 +16,7 @@ require_once 'controllers/CartController.php';
 require_once 'controllers/OrderController.php';
 require_once 'controllers/ProfileController.php';
 require_once 'controllers/PostController.php';
+require_once 'controllers/FavoritesController.php';
 
 // Admin Controllers
 require_once 'controllers/AdminController.php';
@@ -84,6 +85,23 @@ switch ($page) {
     case 'post':
         $controller = new PostController();
         $controller->show();
+        break;
+        
+    case 'favorites':
+        $controller = new FavoritesController();
+        switch ($action) {
+            case 'add':
+                $controller->add();
+                break;
+            case 'remove':
+                $controller->remove();
+                break;
+            case 'toggle':
+                $controller->toggle();
+                break;
+            default:
+                $controller->index();
+        }
         break;
         
     case 'cart':

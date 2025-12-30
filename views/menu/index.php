@@ -22,6 +22,16 @@ require_once 'views/layouts/header.php';
         <?php if (!empty($products)): ?>
             <?php foreach ($products as $product): ?>
                 <div class="food-item <?= ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0) ? 'out-of-stock' : '' ?>">
+                    <?php if (isLoggedIn()): ?>
+                        <div class="favorite-badge">
+                            <button class="favorite-btn <?= isset($product['is_favorite']) && $product['is_favorite'] ? 'active' : '' ?>" 
+                                    onclick="toggleFavorite(<?= $product['id'] ?>, this)"
+                                    title="<?= isset($product['is_favorite']) && $product['is_favorite'] ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích' ?>">
+                                ❤️
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                    
                     <img src="<?= getImageUrl($product['primary_image'] ?? $product['image'] ?? '') ?>" 
                          alt="<?= e($product['name']) ?>">
                     <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
@@ -59,5 +69,129 @@ require_once 'views/layouts/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<style>
+/* Favorite Button Styles */
+.favorite-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.favorite-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    color: #ccc;
+}
+
+.favorite-btn:hover {
+    background: white;
+    transform: scale(1.1);
+}
+
+.favorite-btn.active {
+    color: #ff4757;
+    background: white;
+}
+
+.favorites-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.heart-icon {
+    font-size: 16px;
+}
+</style>
+
+<script>
+function toggleFavorite(productId, button) {
+    fetch('index.php?page=favorites&action=toggle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `product_id=${productId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.action === 'added') {
+                button.classList.add('active');
+                button.title = 'Xóa khỏi yêu thích';
+            } else if (data.action === 'removed') {
+                button.classList.remove('active');
+                button.title = 'Thêm vào yêu thích';
+            }
+            
+            // Hiển thị thông báo
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra!', 'error');
+    });
+}
+
+function showNotification(message, type) {
+    // Tạo notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+        ${type === 'success' ? 'background: #4CAF50;' : 'background: #f44336;'}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Tự động xóa sau 3 giây
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
 
 <?php require_once 'views/layouts/footer.php'; ?>
