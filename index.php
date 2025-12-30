@@ -121,6 +121,12 @@ switch ($page) {
             case 'checkout':
                 $controller->checkout();
                 break;
+            case 'placeOrder':
+                $controller->placeOrder();
+                break;
+            case 'success':
+                $controller->success();
+                break;
             default:
                 $controller->index();
         }

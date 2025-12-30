@@ -149,6 +149,7 @@ class CartController {
         redirect('index.php?page=cart');
     }
     
+    // Hiển thị trang thanh toán
     public function checkout() {
         if (!isLoggedIn()) {
             setFlash('error', 'Vui lòng đăng nhập để đặt hàng!');
@@ -162,10 +163,88 @@ class CartController {
         }
         
         // Lấy danh sách món được chọn từ form
-        $selectedItems = $_POST['selected_items'] ?? [];
+        $selectedItems = $_POST['selected_items'] ?? $_SESSION['checkout_items'] ?? [];
         if (empty($selectedItems)) {
             setFlash('error', 'Vui lòng chọn ít nhất một món để đặt hàng!');
             redirect('index.php?page=cart');
+        }
+        
+        // Lưu vào session để dùng khi place order
+        $_SESSION['checkout_items'] = $selectedItems;
+        
+        // Lấy thông tin user
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        
+        // Lấy thông tin sản phẩm được chọn
+        $checkoutItems = [];
+        $subtotal = 0;
+        
+        $ids = array_map('intval', $selectedItems);
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $stmt = $this->db->prepare("
+            SELECT p.*, pi.image_url as primary_image
+            FROM products p
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
+            WHERE p.id IN ($placeholders)
+        ");
+        $stmt->execute($ids);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($products as $product) {
+            $quantity = $cart[$product['id']] ?? 0;
+            if ($quantity > 0) {
+                $price = $product['sale_price'] ?? $product['price'];
+                $itemSubtotal = $price * $quantity;
+                $subtotal += $itemSubtotal;
+                
+                $checkoutItems[] = [
+                    'product' => $product,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $itemSubtotal
+                ];
+            }
+        }
+        
+        $shippingFee = $subtotal >= 200000 ? 0 : 30000;
+        $total = $subtotal + $shippingFee;
+        
+        require_once 'views/cart/checkout.php';
+    }
+    
+    // Xử lý đặt hàng
+    public function placeOrder() {
+        if (!isLoggedIn()) {
+            setFlash('error', 'Vui lòng đăng nhập để đặt hàng!');
+            redirect('index.php?page=login');
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('index.php?page=cart');
+        }
+        
+        $cart = $_SESSION['cart'] ?? [];
+        $selectedItems = $_SESSION['checkout_items'] ?? [];
+        
+        if (empty($cart) || empty($selectedItems)) {
+            setFlash('error', 'Giỏ hàng trống hoặc chưa chọn món!');
+            redirect('index.php?page=cart');
+        }
+        
+        // Lấy thông tin từ form
+        $customerName = sanitize($_POST['customer_name'] ?? '');
+        $customerPhone = sanitize($_POST['customer_phone'] ?? '');
+        $customerEmail = sanitize($_POST['customer_email'] ?? '');
+        $shippingAddress = sanitize($_POST['shipping_address'] ?? '');
+        $paymentMethod = $_POST['payment_method'] ?? 'cod';
+        $note = sanitize($_POST['note'] ?? '');
+        
+        // Validate
+        if (empty($customerName) || empty($customerPhone) || empty($shippingAddress)) {
+            setFlash('error', 'Vui lòng điền đầy đủ thông tin giao hàng!');
+            redirect('index.php?page=cart&action=checkout');
         }
         
         // Lọc giỏ hàng chỉ lấy các món được chọn
@@ -184,15 +263,10 @@ class CartController {
         try {
             $this->db->beginTransaction();
             
-            // Lấy thông tin user
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
-            $stmt->execute([$_SESSION['user_id']]);
-            $user = $stmt->fetch();
-            
             // Tạo mã đơn hàng
             $orderNumber = 'ORD' . date('YmdHis') . rand(100, 999);
             
-            // Tính tổng tiền chỉ cho các món được chọn
+            // Tính tổng tiền
             $subtotal = 0;
             foreach ($selectedCart as $productId => $quantity) {
                 $stmt = $this->db->prepare("SELECT price, sale_price FROM products WHERE id = ?");
@@ -213,23 +287,25 @@ class CartController {
                 INSERT INTO orders (
                     user_id, order_number, customer_name, customer_email, 
                     customer_phone, shipping_address, subtotal, shipping_fee, 
-                    total, payment_method, payment_status, order_status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cod', 'pending', 'pending')
+                    total, payment_method, payment_status, order_status, note
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?)
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
                 $orderNumber,
-                $user['full_name'],
-                $user['email'],
-                $user['phone'] ?? '',
-                $user['address'] ?? '',
+                $customerName,
+                $customerEmail,
+                $customerPhone,
+                $shippingAddress,
                 $subtotal,
                 $shippingFee,
-                $total
+                $total,
+                $paymentMethod,
+                $note
             ]);
             $orderId = $this->db->lastInsertId();
             
-            // Thêm chi tiết đơn hàng và giảm tồn kho chỉ cho các món được chọn
+            // Thêm chi tiết đơn hàng
             foreach ($selectedCart as $productId => $quantity) {
                 $stmt = $this->db->prepare("
                     SELECT p.*, pi.image_url 
@@ -241,7 +317,6 @@ class CartController {
                 $product = $stmt->fetch();
                 
                 if ($product) {
-                    // Kiểm tra tồn kho
                     if ($product['stock_quantity'] < $quantity) {
                         throw new Exception("Sản phẩm '{$product['name']}' không đủ số lượng trong kho!");
                     }
@@ -249,7 +324,6 @@ class CartController {
                     $price = $product['sale_price'] ?? $product['price'];
                     $itemSubtotal = $price * $quantity;
                     
-                    // Thêm order item
                     $stmt = $this->db->prepare("
                         INSERT INTO order_items (
                             order_id, product_id, product_name, product_image, 
@@ -268,29 +342,19 @@ class CartController {
                     
                     // Giảm tồn kho
                     $newStock = $product['stock_quantity'] - $quantity;
-                    $newStatus = $product['status'];
+                    $newStatus = $newStock <= 0 ? 'out_of_stock' : $product['status'];
                     
-                    // Tự động chuyển sang hết hàng nếu tồn kho = 0
-                    if ($newStock <= 0) {
-                        $newStatus = 'out_of_stock';
-                        $newStock = 0;
-                    }
-                    
-                    $stmt = $this->db->prepare("
-                        UPDATE products 
-                        SET stock_quantity = ?, status = ?
-                        WHERE id = ?
-                    ");
-                    $stmt->execute([$newStock, $newStatus, $productId]);
+                    $stmt = $this->db->prepare("UPDATE products SET stock_quantity = ?, status = ? WHERE id = ?");
+                    $stmt->execute([max(0, $newStock), $newStatus, $productId]);
                 }
             }
             
             // Tạo bản ghi thanh toán
             $stmt = $this->db->prepare("
                 INSERT INTO payments (order_id, payment_method, amount, status)
-                VALUES (?, 'cod', ?, 'pending')
+                VALUES (?, ?, ?, 'pending')
             ");
-            $stmt->execute([$orderId, $total]);
+            $stmt->execute([$orderId, $paymentMethod, $total]);
             
             // Lưu lịch sử trạng thái
             $stmt = $this->db->prepare("
@@ -305,19 +369,50 @@ class CartController {
             foreach ($selectedItems as $productId) {
                 unset($_SESSION['cart'][$productId]);
             }
+            unset($_SESSION['checkout_items']);
             
-            // Nếu giỏ hàng trống hoàn toàn thì xóa session
             if (empty($_SESSION['cart'])) {
                 unset($_SESSION['cart']);
             }
             
-            setFlash('success', 'Đặt hàng thành công! Mã đơn hàng: ' . $orderNumber);
-            redirect('index.php?page=orders');
+            // Chuyển đến trang thành công
+            $_SESSION['order_success'] = [
+                'order_id' => $orderId,
+                'order_number' => $orderNumber,
+                'total' => $total
+            ];
+            redirect('index.php?page=cart&action=success');
             
         } catch (Exception $e) {
             $this->db->rollBack();
             setFlash('error', 'Có lỗi xảy ra: ' . $e->getMessage());
-            redirect('index.php?page=cart');
+            redirect('index.php?page=cart&action=checkout');
         }
+    }
+    
+    // Trang đặt hàng thành công
+    public function success() {
+        if (!isLoggedIn()) {
+            redirect('index.php?page=login');
+        }
+        
+        $orderSuccess = $_SESSION['order_success'] ?? null;
+        if (!$orderSuccess) {
+            redirect('index.php?page=orders');
+        }
+        
+        unset($_SESSION['order_success']);
+        
+        // Lấy thông tin đơn hàng
+        $stmt = $this->db->prepare("SELECT * FROM orders WHERE id = ?");
+        $stmt->execute([$orderSuccess['order_id']]);
+        $order = $stmt->fetch();
+        
+        // Lấy chi tiết đơn hàng
+        $stmt = $this->db->prepare("SELECT * FROM order_items WHERE order_id = ?");
+        $stmt->execute([$orderSuccess['order_id']]);
+        $orderItems = $stmt->fetchAll();
+        
+        require_once 'views/cart/success.php';
     }
 }
