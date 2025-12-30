@@ -87,10 +87,10 @@ require_once 'views/layouts/header.php';
                         <button type="button" onclick="increaseQuantity()">+</button>
                     </div>
                     <a href="javascript:void(0)" onclick="addToCart(<?= $product['id'] ?>)" 
-                       class="btn btn-primary">🛒 Thêm vào giỏ</a>
+                       class="btn btn-orange">Thêm vào giỏ</a>
                 <?php else: ?>
                     <a href="index.php?page=login" 
-                       class="btn btn-login"
+                       class="btn btn-orange"
                        onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
                        🛒 Thêm vào giỏ
                     </a>
@@ -332,6 +332,34 @@ require_once 'views/layouts/header.php';
 
 .product-meta p {
     margin-bottom: 5px;
+}
+
+/* Orange Button Styles */
+.btn-orange {
+    background: linear-gradient(135deg, #ff6b35, #ff5722) !important;
+    color: white !important;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    font-size: 16px;
+}
+
+.btn-orange:hover {
+    background: linear-gradient(135deg, #ff5722, #e64a19) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    color: white !important;
+}
+
+.btn-orange:active {
+    transform: translateY(0);
 }
 
 .related-products {

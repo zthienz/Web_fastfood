@@ -41,7 +41,7 @@ require_once 'views/layouts/header.php';
                         <?php endif; ?>
                     </div>
                     <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
-                       class="btn">Đặt ngay</a>
+                       class="btn btn-orange">Đặt ngay</a>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>

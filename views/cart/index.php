@@ -49,13 +49,13 @@ require_once 'views/layouts/header.php';
                                     <input type="hidden" name="id" value="<?= $item['product']['id'] ?>">
                                     <input type="number" name="quantity" value="<?= $item['quantity'] ?>" 
                                            min="1" style="width: 60px; padding: 5px;">
-                                    <button type="submit" class="btn-small">Cập nhật</button>
+                                    <button type="submit" class="btn-update">Cập nhật</button>
                                 </form>
                             </td>
                             <td><strong><?= formatMoney($item['subtotal']) ?></strong></td>
                             <td>
                                 <a href="index.php?page=cart&action=remove&id=<?= $item['product']['id'] ?>" 
-                                   class="btn-remove"
+                                   class="btn-delete"
                                    onclick="return confirm('Bạn có chắc muốn xóa món này?')">Xóa</a>
                             </td>
                         </tr>
@@ -70,14 +70,14 @@ require_once 'views/layouts/header.php';
             </table>
             
             <div class="cart-actions">
-                <a href="index.php?page=menu" class="btn btn-secondary">Tiếp tục mua hàng</a>
-                <a href="index.php?page=cart&action=checkout" class="btn">Đặt hàng</a>
+                <a href="index.php?page=menu" class="btn btn-continue">Tiếp tục mua hàng</a>
+                <a href="index.php?page=cart&action=checkout" class="btn btn-orange">Đặt hàng</a>
             </div>
         </div>
     <?php else: ?>
         <div class="empty-cart">
             <p>Giỏ hàng của bạn đang trống!</p>
-            <a href="index.php?page=menu" class="btn">Xem thực đơn</a>
+            <a href="index.php?page=menu" class="btn btn-orange">Xem thực đơn</a>
         </div>
     <?php endif; ?>
 </div>
@@ -108,32 +108,101 @@ require_once 'views/layouts/header.php';
     font-weight: 600;
 }
 
-.btn-small {
-    padding: 5px 10px;
-    background: #4CAF50;
+/* Orange Button Styles */
+.btn-orange {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
     color: white;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    font-size: 16px;
 }
 
-.btn-remove {
-    color: #f44336;
+.btn-orange:hover {
+    background: linear-gradient(135deg, #ff5722, #e64a19);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    color: white;
     text-decoration: none;
 }
 
-.btn-remove:hover {
-    text-decoration: underline;
+.btn-continue {
+    background: linear-gradient(135deg, #757575, #616161);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(117, 117, 117, 0.3);
+    font-size: 16px;
+}
+
+.btn-continue:hover {
+    background: linear-gradient(135deg, #616161, #424242);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-update {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    font-size: 12px;
+}
+
+.btn-update:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+    font-size: 12px;
+    display: inline-block;
+}
+
+.btn-delete:hover {
+    background: linear-gradient(135deg, #d32f2f, #c62828);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+    color: white;
+    text-decoration: none;
 }
 
 .cart-actions {
     display: flex;
     justify-content: space-between;
     margin-top: 20px;
-}
-
-.btn-secondary {
-    background: #757575;
+    gap: 15px;
 }
 
 .empty-cart {
@@ -145,6 +214,22 @@ require_once 'views/layouts/header.php';
     font-size: 18px;
     color: #666;
     margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .cart-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .cart-table {
+        font-size: 14px;
+    }
+    
+    .cart-table th,
+    .cart-table td {
+        padding: 10px 5px;
+    }
 }
 </style>
 

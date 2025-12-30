@@ -56,10 +56,10 @@ require_once 'views/layouts/header.php';
                         <button class="btn btn-disabled" disabled>Hết hàng</button>
                     <?php elseif (isLoggedIn()): ?>
                         <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
-                           class="btn">Thêm vào giỏ</a>
+                           class="btn btn-orange">Thêm vào giỏ</a>
                     <?php else: ?>
                         <a href="index.php?page=login" 
-                           class="btn btn-login"
+                           class="btn btn-orange"
                            onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
                            Thêm vào giỏ
                         </a>
