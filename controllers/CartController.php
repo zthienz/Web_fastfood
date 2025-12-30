@@ -161,6 +161,26 @@ class CartController {
             redirect('index.php?page=cart');
         }
         
+        // Lấy danh sách món được chọn từ form
+        $selectedItems = $_POST['selected_items'] ?? [];
+        if (empty($selectedItems)) {
+            setFlash('error', 'Vui lòng chọn ít nhất một món để đặt hàng!');
+            redirect('index.php?page=cart');
+        }
+        
+        // Lọc giỏ hàng chỉ lấy các món được chọn
+        $selectedCart = [];
+        foreach ($selectedItems as $productId) {
+            if (isset($cart[$productId])) {
+                $selectedCart[$productId] = $cart[$productId];
+            }
+        }
+        
+        if (empty($selectedCart)) {
+            setFlash('error', 'Không có món nào được chọn hợp lệ!');
+            redirect('index.php?page=cart');
+        }
+        
         try {
             $this->db->beginTransaction();
             
@@ -172,9 +192,9 @@ class CartController {
             // Tạo mã đơn hàng
             $orderNumber = 'ORD' . date('YmdHis') . rand(100, 999);
             
-            // Tính tổng tiền
+            // Tính tổng tiền chỉ cho các món được chọn
             $subtotal = 0;
-            foreach ($cart as $productId => $quantity) {
+            foreach ($selectedCart as $productId => $quantity) {
                 $stmt = $this->db->prepare("SELECT price, sale_price FROM products WHERE id = ?");
                 $stmt->execute([$productId]);
                 $product = $stmt->fetch();
@@ -209,8 +229,8 @@ class CartController {
             ]);
             $orderId = $this->db->lastInsertId();
             
-            // Thêm chi tiết đơn hàng và giảm tồn kho
-            foreach ($cart as $productId => $quantity) {
+            // Thêm chi tiết đơn hàng và giảm tồn kho chỉ cho các món được chọn
+            foreach ($selectedCart as $productId => $quantity) {
                 $stmt = $this->db->prepare("
                     SELECT p.*, pi.image_url 
                     FROM products p
@@ -281,8 +301,15 @@ class CartController {
             
             $this->db->commit();
             
-            // Xóa giỏ hàng
-            unset($_SESSION['cart']);
+            // Xóa các món đã đặt khỏi giỏ hàng
+            foreach ($selectedItems as $productId) {
+                unset($_SESSION['cart'][$productId]);
+            }
+            
+            // Nếu giỏ hàng trống hoàn toàn thì xóa session
+            if (empty($_SESSION['cart'])) {
+                unset($_SESSION['cart']);
+            }
             
             setFlash('success', 'Đặt hàng thành công! Mã đơn hàng: ' . $orderNumber);
             redirect('index.php?page=orders');

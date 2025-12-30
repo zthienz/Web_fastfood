@@ -8,17 +8,27 @@ require_once 'views/layouts/header.php';
     
     <?php if (!empty($cartItems)): ?>
         <div class="cart-container">
-            <table class="cart-table">
-                <thead>
-                    <tr>
-                        <th>Hình ảnh</th>
-                        <th>Tên món</th>
-                        <th>Giá</th>
-                        <th>Số lượng</th>
-                        <th>Tổng</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
+            <form id="cartForm" method="POST" action="index.php?page=cart&action=checkout">
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <div class="select-all-container">
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                    <label for="selectAll" class="select-all-label">Chọn tất cả</label>
+                                </div>
+                            </th>
+                            <th>Hình ảnh</th>
+                            <th>Tên món</th>
+                            <th>Giá</th>
+                            <th>Số lượng</th>
+                            <th>Tổng</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     <?php foreach ($cartItems as $item): ?>
                         <?php 
@@ -26,6 +36,20 @@ require_once 'views/layouts/header.php';
                             $image = $item['product']['primary_image'] ?? $item['product']['image'] ?? '';
                         ?>
                         <tr>
+                            <td>
+                                <div class="checkbox-container">
+                                    <label class="custom-checkbox">
+                                        <input type="checkbox" 
+                                               name="selected_items[]" 
+                                               value="<?= $item['product']['id'] ?>"
+                                               class="item-checkbox"
+                                               data-price="<?= $item['subtotal'] ?>"
+                                               onchange="updateTotal()"
+                                               checked>
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                            </td>
                             <td>
                                 <img src="<?= getImageUrl($image) ?>" 
                                      alt="<?= e($item['product']['name']) ?>"
@@ -63,16 +87,17 @@ require_once 'views/layouts/header.php';
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4" style="text-align: right;"><strong>Tổng cộng:</strong></td>
-                        <td colspan="2"><strong style="color: #ff5722; font-size: 20px;"><?= formatMoney($total) ?></strong></td>
+                        <td colspan="5" style="text-align: right;"><strong>Tổng cộng:</strong></td>
+                        <td colspan="2"><strong style="color: #ff5722; font-size: 20px;" id="totalAmount"><?= formatMoney($total) ?></strong></td>
                     </tr>
                 </tfoot>
             </table>
             
             <div class="cart-actions">
                 <a href="index.php?page=menu" class="btn btn-continue">Tiếp tục mua hàng</a>
-                <a href="index.php?page=cart&action=checkout" class="btn btn-orange">Đặt hàng</a>
+                <button type="submit" class="btn btn-orange" id="checkoutBtn">Đặt hàng các món đã chọn</button>
             </div>
+        </form>
         </div>
     <?php else: ?>
         <div class="empty-cart">
@@ -101,11 +126,130 @@ require_once 'views/layouts/header.php';
     padding: 15px;
     text-align: left;
     border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.cart-table th:first-child,
+.cart-table td:first-child {
+    text-align: center;
+    width: 80px;
 }
 
 .cart-table th {
     background: #f5f5f5;
     font-weight: 600;
+}
+
+/* Custom Checkbox Styles */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.custom-checkbox {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.custom-checkbox input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.checkmark {
+    position: relative;
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 3px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    border-color: #ff5722;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+    animation: checkmark 0.3s ease-in-out;
+}
+
+@keyframes checkmark {
+    0% {
+        opacity: 0;
+        transform: rotate(45deg) scale(0);
+    }
+    50% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+}
+
+.custom-checkbox:hover .checkmark {
+    border-color: #ff5722;
+    box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+.custom-checkbox input:indeterminate ~ .checkmark {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    border-color: #ff9800;
+}
+
+.custom-checkbox input:indeterminate ~ .checkmark:after {
+    display: block;
+    left: 4px;
+    top: 9px;
+    width: 12px;
+    height: 2px;
+    border: none;
+    background: white;
+    border-radius: 1px;
+    transform: none;
+}
+
+.select-all-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.select-all-label {
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+}
+
+.select-all-label:hover {
+    color: #ff5722;
 }
 
 /* Orange Button Styles */
@@ -131,6 +275,21 @@ require_once 'views/layouts/header.php';
     box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
     color: white;
     text-decoration: none;
+}
+
+.btn-orange:disabled {
+    background: linear-gradient(135deg, #ccc, #999) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.6 !important;
+}
+
+.btn-orange:disabled:hover {
+    background: linear-gradient(135deg, #ccc, #999) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.6 !important;
 }
 
 .btn-continue {
@@ -232,5 +391,81 @@ require_once 'views/layouts/header.php';
     }
 }
 </style>
+
+<script>
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateTotal();
+}
+
+function updateTotal() {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const totalAmountElement = document.getElementById('totalAmount');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    
+    let total = 0;
+    itemCheckboxes.forEach(checkbox => {
+        total += parseFloat(checkbox.dataset.price);
+    });
+    
+    // Cập nhật hiển thị tổng tiền
+    totalAmountElement.textContent = formatMoney(total);
+    
+    // Cập nhật trạng thái checkbox "Chọn tất cả"
+    const allCheckboxes = document.querySelectorAll('.item-checkbox');
+    const checkedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+    
+    if (checkedCheckboxes.length === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Vui lòng chọn món để đặt hàng';
+        checkoutBtn.style.opacity = '0.6';
+        checkoutBtn.style.cursor = 'not-allowed';
+    } else if (checkedCheckboxes.length === allCheckboxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Đặt hàng các món đã chọn';
+        checkoutBtn.style.opacity = '1';
+        checkoutBtn.style.cursor = 'pointer';
+    } else {
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.checked = false;
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Đặt hàng các món đã chọn';
+        checkoutBtn.style.opacity = '1';
+        checkoutBtn.style.cursor = 'pointer';
+    }
+}
+
+function formatMoney(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(amount).replace('₫', 'đ');
+}
+
+// Ngăn chặn submit form nếu không có món nào được chọn
+document.getElementById('cartForm').addEventListener('submit', function(e) {
+    const checkedItems = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedItems.length === 0) {
+        e.preventDefault();
+        alert('Vui lòng chọn ít nhất một món để đặt hàng!');
+    }
+});
+
+// Khởi tạo trạng thái ban đầu
+document.addEventListener('DOMContentLoaded', function() {
+    updateTotal();
+});
+</script>
 
 <?php require_once 'views/layouts/footer.php'; ?>
