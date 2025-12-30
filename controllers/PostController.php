@@ -9,7 +9,7 @@ class PostController
         $this->db = Database::getInstance()->getConnection();
     }
 
-    // Hiển thị tất cả bài đăng dạng grid 3 cột
+    // Hiển thị tất cả bài đăng dạng grid
     public function index()
     {
         $stmt = $this->db->query("
