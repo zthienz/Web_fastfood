@@ -287,7 +287,7 @@ class CartController {
                 INSERT INTO orders (
                     user_id, order_number, customer_name, customer_email, 
                     customer_phone, shipping_address, subtotal, shipping_fee, 
-                    total, payment_method, payment_status, order_status, note
+                    total, payment_method, payment_status, order_status, notes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?)
             ");
             $stmt->execute([
