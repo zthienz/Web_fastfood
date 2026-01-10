@@ -145,6 +145,12 @@ switch ($page) {
             case 'submit':
                 $controller->submitOrderComment();
                 break;
+            case 'order_review':
+                $controller->showOrderReview();
+                break;
+            case 'submit_order_reviews':
+                $controller->submitOrderReviews();
+                break;
             default:
                 redirect('index.php');
         }

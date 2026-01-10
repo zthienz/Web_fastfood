@@ -1,302 +1,352 @@
 <?php require_once 'views/layouts/header.php'; ?>
 
-<div class="container-fluid px-4 py-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb bg-transparent p-0">
-                    <li class="breadcrumb-item">
-                        <a href="index.php" class="text-decoration-none">
-                            <i class="fas fa-home me-1"></i>Trang chủ
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="index.php?page=orders" class="text-decoration-none">Đơn hàng</a>
-                    </li>
-                    <li class="breadcrumb-item active">Chi tiết đơn hàng</li>
-                </ol>
-            </nav>
+<div class="order-detail-container">
+    <!-- Header đơn hàng -->
+    <div class="order-header">
+        <div class="order-id">
+            <span class="order-label">Mã đơn hàng:</span>
+            <span class="order-number"><?= e($order['order_number']) ?></span>
+        </div>
+        <div class="order-status">
+            <span class="status-badge status-<?= $order['order_status'] ?>">
+                <?= getOrderStatusText($order['order_status']) ?>
+            </span>
+        </div>
+    </div>
 
-            <!-- Header đơn hàng -->
-            <div class="order-header-card mb-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="order-title mb-2">
-                            <i class="fas fa-receipt text-primary me-2"></i>
-                            Đơn hàng #<?= e($order['order_number']) ?>
-                        </h2>
-                        <p class="order-date mb-0">
-                            <i class="fas fa-calendar-alt me-1"></i>
-                            Đặt ngày <?= date('d/m/Y lúc H:i', strtotime($order['created_at'])) ?>
-                        </p>
+    <!-- Main Content -->
+    <div class="order-content">
+        <!-- Left Column - Customer & Order Info -->
+        <div class="order-info-section">
+            <!-- Thông tin người nhận -->
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="fas fa-user"></i>
+                    <h3>Thông tin người nhận</h3>
+                </div>
+                <div class="info-content">
+                    <div class="info-row">
+                        <span class="label">Họ tên:</span>
+                        <span class="value"><?= e($order['customer_name']) ?></span>
                     </div>
-                    <div class="order-status-badge">
-                        <span class="status-badge status-<?= $order['order_status'] ?>">
-                            <i class="fas <?= getOrderStatusIcon($order['order_status']) ?> me-1"></i>
-                            <?= getOrderStatusText($order['order_status']) ?>
-                        </span>
+                    <div class="info-row">
+                        <span class="label">Số điện thoại:</span>
+                        <span class="value"><?= e($order['customer_phone']) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Địa chỉ:</span>
+                        <span class="value"><?= e($order['shipping_address']) ?></span>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <!-- Thông tin đơn hàng -->
-                <div class="col-lg-8">
-                    <!-- Sản phẩm đã đặt -->
-                    <div class="products-card mb-4">
-                        <div class="card-header-custom">
-                            <h5 class="mb-0">
-                                <i class="fas fa-shopping-bag me-2"></i>
-                                Sản phẩm đã đặt (<?= count($orderItems) ?> món)
-                            </h5>
-                        </div>
-                        <div class="products-list">
-                            <?php foreach ($orderItems as $item): ?>
-                                <div class="product-item">
-                                    <div class="product-image">
-                                        <?php 
-                                        $imageUrl = '';
-                                        // Ưu tiên hình ảnh hiện tại từ product_images
-                                        if ($item['current_product_image']) {
-                                            $imageUrl = getImageUrl($item['current_product_image']);
-                                        } elseif ($item['product_image']) {
-                                            // Fallback về hình ảnh lưu trong order_items
-                                            $imageUrl = getImageUrl($item['product_image']);
-                                        }
-                                        ?>
-                                        <?php if ($imageUrl): ?>
-                                            <img src="<?= $imageUrl ?>" 
-                                                 alt="<?= e($item['product_name']) ?>" 
-                                                 class="product-img">
-                                        <?php else: ?>
-                                            <div class="product-img-placeholder">
-                                                <i class="fas fa-utensils"></i>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <div class="product-details">
-                                        <h6 class="product-name">
-                                            <?= e($item['current_product_name'] ?: $item['product_name']) ?>
-                                        </h6>
-                                        <div class="product-meta">
-                                            <span class="price"><?= formatMoney($item['price']) ?></span>
-                                            <span class="quantity">x<?= e($item['quantity']) ?></span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="product-actions">
-                                        <div class="subtotal">
-                                            <?= formatMoney($item['subtotal']) ?>
-                                        </div>
-                                        
-                                        <?php if ($order['order_status'] === 'delivered'): ?>
-                                            <div class="rating-section mt-2">
-                                                <?php if ($item['comment_id']): ?>
-                                                    <!-- Đã bình luận -->
-                                                    <div class="rated-badge">
-                                                        <i class="fas fa-check-circle text-success me-1"></i>
-                                                        <small class="text-success fw-bold">Đã đánh giá</small>
-                                                    </div>
-                                                    <div class="rating-stars mt-1">
-                                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                            <i class="fas fa-star <?= $i <= $item['rating'] ? 'text-warning' : 'text-muted' ?>"></i>
-                                                        <?php endfor; ?>
-                                                    </div>
-                                                    <small class="text-muted d-block">
-                                                        <?= date('d/m/Y', strtotime($item['comment_date'])) ?>
-                                                    </small>
-                                                <?php else: ?>
-                                                    <!-- Chưa bình luận -->
-                                                    <a href="index.php?page=comments&action=form&order_id=<?= e($order['id']) ?>&product_id=<?= e($item['product_id']) ?>" 
-                                                       class="btn-rate">
-                                                        <i class="fas fa-star me-1"></i>
-                                                        Đánh giá
-                                                    </a>
-                                                <?php endif; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
+            <!-- Thông tin đơn hàng -->
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>Thông tin đơn hàng</h3>
+                </div>
+                <div class="info-content">
+                    <div class="info-row">
+                        <span class="label">Ngày đặt:</span>
+                        <span class="value"><?= date('H:i d/m/Y', strtotime($order['created_at'])) ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phương thức thanh toán:</span>
+                        <span class="value"><?= getPaymentMethodText($order['payment_method']) ?></span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Sidebar thông tin -->
-                <div class="col-lg-4">
-                    <!-- Thông tin giao hàng -->
-                    <div class="info-card mb-4">
-                        <div class="info-header">
-                            <i class="fas fa-truck text-primary me-2"></i>
-                            <h6 class="mb-0">Thông tin giao hàng</h6>
-                        </div>
-                        <div class="info-content">
-                            <div class="info-item">
-                                <strong>Người nhận:</strong>
-                                <span><?= e($order['customer_name']) ?></span>
-                            </div>
-                            <div class="info-item">
-                                <strong>Điện thoại:</strong>
-                                <span><?= e($order['customer_phone']) ?></span>
-                            </div>
-                            <div class="info-item">
-                                <strong>Email:</strong>
-                                <span><?= e($order['customer_email']) ?></span>
-                            </div>
-                            <div class="info-item">
-                                <strong>Địa chỉ:</strong>
-                                <span><?= e($order['shipping_address']) ?></span>
-                            </div>
-                        </div>
+            <?php if ($order['order_status'] === 'delivered'): ?>
+                <!-- Review Actions -->
+                <div class="review-actions-card">
+                    <div class="review-header">
+                        <i class="fas fa-star"></i>
+                        <h3>Đánh giá đơn hàng</h3>
                     </div>
-
-                    <!-- Thông tin thanh toán -->
-                    <div class="info-card mb-4">
-                        <div class="info-header">
-                            <i class="fas fa-credit-card text-success me-2"></i>
-                            <h6 class="mb-0">Thông tin thanh toán</h6>
-                        </div>
-                        <div class="info-content">
-                            <div class="info-item">
-                                <strong>Phương thức:</strong>
-                                <span><?= getPaymentMethodText($order['payment_method']) ?></span>
-                            </div>
-                            <div class="info-item">
-                                <strong>Trạng thái:</strong>
-                                <span class="payment-status status-<?= $order['payment_status'] ?>">
-                                    <?= getPaymentStatusText($order['payment_status']) ?>
+                    <div class="review-content">
+                        <?php
+                        // Kiểm tra xem có sản phẩm nào chưa được đánh giá không
+                        $hasUnreviewedProducts = false;
+                        $totalProducts = count($orderItems);
+                        $reviewedProducts = 0;
+                        
+                        foreach ($orderItems as $item) {
+                            if ($item['comment_id']) {
+                                $reviewedProducts++;
+                            } else {
+                                $hasUnreviewedProducts = true;
+                            }
+                        }
+                        ?>
+                        
+                        <div class="review-status">
+                            <div class="review-progress">
+                                <span class="progress-text">
+                                    Đã đánh giá: <?= $reviewedProducts ?>/<?= $totalProducts ?> sản phẩm
                                 </span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: <?= $totalProducts > 0 ? ($reviewedProducts / $totalProducts * 100) : 0 ?>%"></div>
+                                </div>
                             </div>
-                            <?php if ($order['delivered_at']): ?>
-                                <div class="info-item">
-                                    <strong>Ngày giao:</strong>
-                                    <span><?= date('d/m/Y H:i', strtotime($order['delivered_at'])) ?></span>
-                                </div>
-                            <?php endif; ?>
-                            <?php if ($order['notes']): ?>
-                                <div class="info-item">
-                                    <strong>Ghi chú:</strong>
-                                    <span><?= e($order['notes']) ?></span>
-                                </div>
-                            <?php endif; ?>
                         </div>
+                        
+                        <?php if ($hasUnreviewedProducts): ?>
+                            <a href="index.php?page=comments&action=order_review&order_id=<?= $order['id'] ?>" class="btn-review">
+                                <i class="fas fa-star"></i>
+                                Đánh giá đơn hàng
+                            </a>
+                        <?php else: ?>
+                            <div class="all-reviewed">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Đã đánh giá tất cả sản phẩm</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
+                </div>
+            <?php endif; ?>
+        </div>
 
-                    <!-- Tổng tiền -->
-                    <div class="summary-card">
-                        <div class="summary-header">
-                            <h6 class="mb-0">Tổng kết đơn hàng</h6>
-                        </div>
-                        <div class="summary-content">
-                            <div class="summary-row">
-                                <span>Tạm tính:</span>
-                                <span><?= formatMoney($order['subtotal']) ?></span>
+        <!-- Right Column - Products -->
+        <div class="products-section">
+            <!-- Sản phẩm -->
+            <div class="products-card">
+                <div class="products-header">
+                    <i class="fas fa-box"></i>
+                    <h3>Sản phẩm</h3>
+                </div>
+                <div class="products-list">
+                    <?php foreach ($orderItems as $item): ?>
+                        <div class="product-item">
+                            <div class="product-image">
+                                <?php 
+                                $imageUrl = '';
+                                if ($item['current_product_image']) {
+                                    $imageUrl = getImageUrl($item['current_product_image']);
+                                } elseif ($item['product_image']) {
+                                    $imageUrl = getImageUrl($item['product_image']);
+                                }
+                                ?>
+                                <?php if ($imageUrl): ?>
+                                    <img src="<?= $imageUrl ?>" alt="<?= e($item['product_name']) ?>">
+                                <?php else: ?>
+                                    <div class="product-placeholder">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <div class="summary-row">
-                                <span>Phí vận chuyển:</span>
-                                <span><?= formatMoney($order['shipping_fee']) ?></span>
-                            </div>
-                            <?php if ($order['discount'] > 0): ?>
-                                <div class="summary-row discount">
-                                    <span>Giảm giá:</span>
-                                    <span>-<?= formatMoney($order['discount']) ?></span>
+                            <div class="product-info">
+                                <h4 class="product-name"><?= e($item['current_product_name'] ?: $item['product_name']) ?></h4>
+                                <div class="product-details">
+                                    <span class="product-sku">SKU: <?= e($item['product_id']) ?></span>
+                                    <span class="product-quantity">Số lượng: x<?= e($item['quantity']) ?></span>
                                 </div>
-                            <?php endif; ?>
-                            <div class="summary-total">
-                                <span>Tổng cộng:</span>
-                                <span><?= formatMoney($order['total']) ?></span>
+                                
+                                <?php if ($item['comment_id'] && $order['order_status'] === 'delivered'): ?>
+                                    <!-- Hiển thị đánh giá đã có -->
+                                    <div class="product-review">
+                                        <div class="review-rating">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <i class="fas fa-star <?= $i <= $item['rating'] ? 'rated' : '' ?>"></i>
+                                            <?php endfor; ?>
+                                            <span class="rating-text">(<?= $item['rating'] ?>/5)</span>
+                                        </div>
+                                        <div class="review-content">
+                                            <p><?= e($item['comment_content']) ?></p>
+                                            <small class="review-date">Đánh giá ngày <?= date('d/m/Y', strtotime($item['comment_date'])) ?></small>
+                                        </div>
+                                    </div>
+                                <?php elseif ($order['order_status'] === 'delivered'): ?>
+                                    <!-- Hiển thị trạng thái chưa đánh giá -->
+                                    <div class="product-not-reviewed">
+                                        <i class="fas fa-star-o"></i>
+                                        <span>Chưa đánh giá</span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="product-pricing">
+                                <div class="unit-price"><?= formatMoney($item['price']) ?></div>
+                                <div class="total-price">Tổng: <?= formatMoney($item['subtotal']) ?></div>
                             </div>
                         </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
-            <!-- Nút quay lại -->
-            <div class="mt-4">
-                <a href="index.php?page=orders" class="btn-back">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Quay lại danh sách đơn hàng
-                </a>
+            <!-- Tổng tiền -->
+            <div class="order-summary">
+                <div class="summary-total">
+                    <span class="total-label">Tổng tiền:</span>
+                    <span class="total-amount"><?= formatMoney($order['total']) ?></span>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="back-section">
+        <a href="index.php?page=orders" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Quay lại danh sách đơn hàng
+        </a>
     </div>
 </div>
 
 <style>
-/* Modern Order Detail Styles */
-.container-fluid {
+/* Order Detail Page Styles - Inspired by the provided image */
+.order-detail-container {
     max-width: 1200px;
-}
-
-.breadcrumb {
-    font-size: 0.9rem;
-}
-
-.breadcrumb-item a {
-    color: #ff6b35;
-    transition: color 0.3s ease;
-}
-
-.breadcrumb-item a:hover {
-    color: #e55a2b;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
 }
 
 /* Order Header */
-.order-header-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+.order-header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #ff6b35;
 }
 
-.order-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin: 0;
+.order-id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.order-date {
-    opacity: 0.9;
-    font-size: 0.95rem;
+.order-label {
+    font-size: 16px;
+    color: #666;
+    font-weight: 500;
+}
+
+.order-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.order-status {
+    display: flex;
+    align-items: center;
 }
 
 .status-badge {
-    padding: 0.75rem 1.5rem;
-    border-radius: 25px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
     font-weight: 600;
-    font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-.status-pending { background: linear-gradient(135deg, #ffeaa7, #fdcb6e); color: #2d3436; }
-.status-confirmed { background: linear-gradient(135deg, #74b9ff, #0984e3); color: white; }
-.status-preparing { background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: white; }
-.status-shipping { background: linear-gradient(135deg, #fd79a8, #e84393); color: white; }
-.status-delivered { background: linear-gradient(135deg, #00b894, #00a085); color: white; }
-.status-cancelled { background: linear-gradient(135deg, #ff7675, #d63031); color: white; }
+.status-pending { background: #fff3e0; color: #f57c00; }
+.status-confirmed { background: #e3f2fd; color: #1976d2; }
+.status-preparing { background: #f3e5f5; color: #7b1fa2; }
+.status-shipping { background: #fce4ec; color: #c2185b; }
+.status-delivered { background: #e8f5e9; color: #388e3c; }
+.status-cancelled { background: #ffebee; color: #d32f2f; }
 
-/* Products Card */
-.products-card {
+/* Main Content Layout */
+.order-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Info Cards */
+.info-card {
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
     overflow: hidden;
 }
 
-.card-header-custom {
-    background: linear-gradient(135deg, #ff6b35, #f7931e);
+.info-header {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
     color: white;
-    padding: 1.5rem;
-    border: none;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.card-header-custom h5 {
+.info-header i {
+    font-size: 18px;
+}
+
+.info-header h3 {
     margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-content {
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.info-row .label {
+    font-weight: 600;
+    color: #666;
+    min-width: 120px;
+}
+
+.info-row .value {
+    color: #333;
+    text-align: right;
+    flex: 1;
+    margin-left: 15px;
+}
+
+/* Products Section */
+.products-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.products-header {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.products-header i {
+    font-size: 18px;
+}
+
+.products-header h3 {
+    margin: 0;
+    font-size: 16px;
     font-weight: 600;
 }
 
@@ -307,13 +357,9 @@
 .product-item {
     display: flex;
     align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #f8f9fa;
-    transition: background-color 0.3s ease;
-}
-
-.product-item:hover {
-    background-color: #f8f9fa;
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 15px;
 }
 
 .product-item:last-child {
@@ -322,279 +368,358 @@
 
 .product-image {
     flex-shrink: 0;
-    margin-right: 1.5rem;
 }
 
-.product-img {
-    width: 80px;
-    height: 80px;
+.product-image img {
+    width: 60px;
+    height: 60px;
     object-fit: cover;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    border: 2px solid #f0f0f0;
 }
 
-.product-img-placeholder {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #ddd, #bbb);
-    border-radius: 12px;
+.product-placeholder {
+    width: 60px;
+    height: 60px;
+    background: #f0f0f0;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
-    font-size: 1.5rem;
+    color: #999;
+    font-size: 20px;
 }
 
-.product-details {
-    flex-grow: 1;
+.product-info {
+    flex: 1;
 }
 
 .product-name {
-    font-size: 1.1rem;
+    font-size: 16px;
     font-weight: 600;
-    color: #2d3436;
-    margin-bottom: 0.5rem;
+    color: #333;
+    margin: 0 0 8px 0;
 }
 
-.product-meta {
+.product-details {
     display: flex;
-    gap: 1rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.product-meta .price {
-    color: #ff6b35;
-    font-weight: 600;
-    font-size: 1rem;
+.product-sku {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
 }
 
-.product-meta .quantity {
-    background: #e9ecef;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #495057;
+.product-quantity {
+    font-size: 14px;
+    color: #666;
 }
 
-.product-actions {
+.product-pricing {
     text-align: right;
     flex-shrink: 0;
 }
 
-.subtotal {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #2d3436;
-    margin-bottom: 0.5rem;
+.unit-price {
+    font-size: 14px;
+    color: #ff6b35;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
-.rating-section {
-    text-align: center;
+.total-price {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
 }
 
-.rated-badge {
+/* Order Summary */
+.order-summary {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    overflow: hidden;
+}
+
+.summary-total {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.total-amount {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Review Actions Card */
+.review-actions-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 2px solid #ff6b35;
+}
+
+.review-header {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    color: white;
+    padding: 15px 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
+    gap: 10px;
 }
 
-.rating-stars {
-    font-size: 0.9rem;
+.review-header i {
+    font-size: 18px;
 }
 
-.btn-rate {
-    background: linear-gradient(135deg, #ff6b35, #f7931e);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    text-decoration: none;
-    font-size: 0.85rem;
+.review-header h3 {
+    margin: 0;
+    font-size: 16px;
     font-weight: 600;
-    transition: all 0.3s ease;
+}
+
+.review-content {
+    padding: 20px;
+}
+
+.review-status {
+    margin-bottom: 20px;
+}
+
+.review-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.btn-review {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    width: 100%;
+    justify-content: center;
 }
 
-.btn-rate:hover {
-    background: linear-gradient(135deg, #e55a2b, #e8851e);
+.btn-review:hover {
+    background: linear-gradient(135deg, #ff5722, #e64a19);
     color: white;
+    text-decoration: none;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
 }
 
-/* Info Cards */
-.info-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    overflow: hidden;
+.all-reviewed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #28a745;
+    font-weight: 600;
+    padding: 12px;
+    background: #d4edda;
+    border-radius: 8px;
+    border: 1px solid #c3e6cb;
 }
 
-.info-header {
+.all-reviewed i {
+    font-size: 18px;
+}
+
+/* Product Review Styles */
+.product-review {
+    margin-top: 12px;
+    padding: 12px;
     background: #f8f9fa;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.review-rating {
     display: flex;
     align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
 }
 
-.info-header h6 {
-    margin: 0;
-    font-weight: 600;
-    color: #2d3436;
+.review-rating .fas.fa-star {
+    color: #e9ecef;
+    font-size: 14px;
 }
 
-.info-content {
-    padding: 1.5rem;
+.review-rating .fas.fa-star.rated {
+    color: #ffc107;
 }
 
-.info-item {
+.rating-text {
+    font-size: 12px;
+    color: #666;
+    margin-left: 4px;
+}
+
+.review-content p {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.review-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.product-not-reviewed {
+    margin-top: 12px;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.info-item:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.info-item strong {
-    color: #636e72;
-    font-size: 0.9rem;
-    min-width: 100px;
-}
-
-.info-item span {
-    color: #2d3436;
-    font-weight: 500;
-    text-align: right;
-    flex: 1;
-    margin-left: 1rem;
-}
-
-.payment-status {
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.payment-status.status-pending { background: #fff3e0; color: #f57c00; }
-.payment-status.status-paid { background: #e8f5e9; color: #388e3c; }
-.payment-status.status-failed { background: #ffebee; color: #d32f2f; }
-.payment-status.status-refunded { background: #e3f2fd; color: #1976d2; }
-
-/* Summary Card */
-.summary-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    overflow: hidden;
-}
-
-.summary-header {
-    background: linear-gradient(135deg, #2d3436, #636e72);
-    color: white;
-    padding: 1rem 1.5rem;
-}
-
-.summary-header h6 {
-    margin: 0;
-    font-weight: 600;
-}
-
-.summary-content {
-    padding: 1.5rem;
-}
-
-.summary-row {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
+    gap: 6px;
+    color: #6c757d;
+    font-size: 14px;
+    font-style: italic;
 }
 
-.summary-row.discount {
-    color: #00b894;
-    font-weight: 600;
+.product-not-reviewed i {
+    font-size: 14px;
 }
 
-.summary-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1rem;
-    border-top: 2px solid #f1f3f4;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #ff6b35;
-}
-
-/* Back Button */
 .btn-back {
-    background: linear-gradient(135deg, #636e72, #2d3436);
+    background: linear-gradient(135deg, #6c757d, #5a6268);
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 12px 24px;
     border-radius: 25px;
     text-decoration: none;
     font-weight: 600;
-    transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
 }
 
 .btn-back:hover {
-    background: linear-gradient(135deg, #2d3436, #636e72);
+    background: linear-gradient(135deg, #5a6268, #495057);
     color: white;
+    text-decoration: none;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
-/* Responsive */
+/* Back Section */
+.back-section {
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .order-header-card {
-        padding: 1.5rem;
+    .order-detail-container {
+        padding: 15px;
     }
     
-    .order-header-card .d-flex {
+    .order-header {
         flex-direction: column;
-        gap: 1rem;
+        gap: 15px;
         text-align: center;
+        padding: 20px;
+    }
+    
+    .order-content {
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
     
     .product-item {
         flex-direction: column;
         text-align: center;
-        gap: 1rem;
+        gap: 15px;
     }
     
-    .product-image {
-        margin-right: 0;
-    }
-    
-    .product-actions {
+    .product-pricing {
         text-align: center;
     }
     
-    .info-item {
+    .info-row {
         flex-direction: column;
         text-align: center;
-        gap: 0.5rem;
+        gap: 5px;
     }
     
-    .info-item span {
+    .info-row .value {
         margin-left: 0;
         text-align: center;
+    }
+    
+    .summary-total {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-header {
+        padding: 15px;
+    }
+    
+    .info-header, .products-header {
+        padding: 12px 15px;
+    }
+    
+    .info-content, .product-item {
+        padding: 15px;
+    }
+    
+    .product-image img, .product-placeholder {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .total-amount {
+        font-size: 20px;
     }
 }
 </style>

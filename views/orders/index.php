@@ -53,6 +53,12 @@ require_once 'views/layouts/header.php';
                     </div>
                     <div class="order-footer">
                         <a href="index.php?page=orders&action=detail&id=<?= $order['id'] ?>" class="btn-link">Xem chi tiết</a>
+                        <?php if ($order['order_status'] === 'delivered'): ?>
+                            <a href="index.php?page=comments&action=order_review&order_id=<?= $order['id'] ?>" class="btn-review">
+                                <i class="fas fa-star"></i>
+                                Đánh giá
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -151,6 +157,9 @@ require_once 'views/layouts/header.php';
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid #eee;
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
 .btn-link {
@@ -163,6 +172,29 @@ require_once 'views/layouts/header.php';
     text-decoration: underline;
 }
 
+.btn-review {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.btn-review:hover {
+    background: linear-gradient(135deg, #ff5722, #e64a19);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
 .empty-orders {
     text-align: center;
     padding: 60px 20px;
@@ -172,6 +204,34 @@ require_once 'views/layouts/header.php';
     font-size: 18px;
     color: #666;
     margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .orders-list {
+        gap: 15px;
+    }
+    
+    .order-card {
+        padding: 15px;
+    }
+    
+    .order-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .order-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .btn-review {
+        text-align: center;
+        justify-content: center;
+    }
 }
 </style>
 

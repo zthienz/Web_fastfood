@@ -166,8 +166,8 @@ class MenuController {
             $sql .= " LEFT JOIN favorites f ON p.id = f.product_id AND f.user_id = ?";
         }
         
-        // Điều kiện WHERE với tìm kiếm
-        $whereConditions = ["p.status != 'inactive'", "(p.name LIKE ? OR p.description LIKE ?)"];
+        // Điều kiện WHERE với tìm kiếm (chỉ tìm theo tên món ăn)
+        $whereConditions = ["p.status != 'inactive'", "p.name LIKE ?"];
         $params = [];
         
         if ($userId && $favoritesTableExists) {
@@ -175,7 +175,6 @@ class MenuController {
         }
         
         $searchTerm = "%$keyword%";
-        $params[] = $searchTerm;
         $params[] = $searchTerm;
         
         // Thêm các điều kiện lọc khác

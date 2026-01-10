@@ -104,6 +104,49 @@ require_once 'views/layouts/header.php';
         </div>
     </div>
 
+    <!-- Phần đánh giá và bình luận -->
+    <div class="product-reviews">
+        <div class="reviews-header">
+            <h2>Đánh giá sản phẩm</h2>
+            <?php if ($totalComments > 0): ?>
+                <div class="rating-summary">
+                    <span class="total-reviews">(<?= $totalComments ?> đánh giá)</span>
+                </div>
+            <?php else: ?>
+                <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
+            <?php endif; ?>
+        </div>
+
+        <?php if (!empty($comments)): ?>
+            <div class="reviews-list">
+                <?php foreach ($comments as $comment): ?>
+                    <div class="review-item">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">
+                                <?php if ($comment['avatar']): ?>
+                                    <img src="<?= e($comment['avatar']) ?>" alt="<?= e($comment['full_name']) ?>">
+                                <?php else: ?>
+                                    <div class="default-avatar">
+                                        <?= strtoupper(substr($comment['full_name'], 0, 1)) ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="reviewer-details">
+                                <h4><?= e($comment['full_name']) ?></h4>
+                                <div class="review-meta">
+                                    <span class="review-date"><?= date('d/m/Y', strtotime($comment['created_at'])) ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="review-content">
+                            <p><?= nl2br(e($comment['content'])) ?></p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- Sản phẩm liên quan -->
     <?php if (!empty($relatedProducts)): ?>
     <div class="related-products">
@@ -129,68 +172,6 @@ require_once 'views/layouts/header.php';
         </div>
     </div>
     <?php endif; ?>
-
-    <!-- Phần đánh giá và bình luận -->
-    <div class="product-reviews">
-        <div class="reviews-header">
-            <h2>Đánh giá sản phẩm</h2>
-            <?php if ($totalComments > 0): ?>
-                <div class="rating-summary">
-                    <div class="average-rating">
-                        <span class="rating-score"><?= $productRating['average'] ?></span>
-                        <div class="stars">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star <?= $i <= round($productRating['average']) ? 'active' : '' ?>"></i>
-                            <?php endfor; ?>
-                        </div>
-                        <span class="total-reviews">(<?= $totalComments ?> đánh giá)</span>
-                    </div>
-                </div>
-            <?php else: ?>
-                <p class="no-reviews">Chưa có đánh giá nào cho sản phẩm này.</p>
-            <?php endif; ?>
-        </div>
-
-        <?php if (!empty($comments)): ?>
-            <div class="reviews-list">
-                <?php foreach ($comments as $comment): ?>
-                    <div class="review-item">
-                        <div class="reviewer-info">
-                            <div class="reviewer-avatar">
-                                <?php if ($comment['avatar']): ?>
-                                    <img src="<?= e($comment['avatar']) ?>" alt="<?= e($comment['full_name']) ?>">
-                                <?php else: ?>
-                                    <div class="default-avatar">
-                                        <?= strtoupper(substr($comment['full_name'], 0, 1)) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="reviewer-details">
-                                <h4><?= e($comment['full_name']) ?></h4>
-                                <div class="review-meta">
-                                    <div class="rating">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star <?= $i <= $comment['rating'] ? 'active' : '' ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                    <span class="review-date"><?= date('d/m/Y', strtotime($comment['created_at'])) ?></span>
-                                    <?php if ($comment['order_number']): ?>
-                                        <span class="verified-purchase">
-                                            <i class="fas fa-check-circle"></i>
-                                            Đã mua hàng
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="review-content">
-                            <p><?= nl2br(e($comment['content'])) ?></p>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
 </div>
 
 <style>
@@ -510,35 +491,10 @@ require_once 'views/layouts/header.php';
     gap: 20px;
 }
 
-.average-rating {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.rating-score {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #ff6b35;
-}
-
-.stars {
-    display: flex;
-    gap: 2px;
-}
-
-.stars i {
-    font-size: 1.2rem;
-    color: #ddd;
-}
-
-.stars i.active {
-    color: #ffc107;
-}
-
 .total-reviews {
     color: #666;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .no-reviews {
@@ -598,35 +554,9 @@ require_once 'views/layouts/header.php';
     flex-wrap: wrap;
 }
 
-.review-meta .rating {
-    display: flex;
-    gap: 2px;
-}
-
-.review-meta .rating i {
-    font-size: 0.9rem;
-    color: #ddd;
-}
-
-.review-meta .rating i.active {
-    color: #ffc107;
-}
-
 .review-date {
     color: #666;
     font-size: 0.85rem;
-}
-
-.verified-purchase {
-    background: #28a745;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
 .review-content p {

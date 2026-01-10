@@ -12,89 +12,116 @@ require_once 'views/layouts/header.php';
             <input type="hidden" name="page" value="menu">
             <input type="hidden" name="action" value="<?= isset($_GET['action']) && $_GET['action'] === 'search' ? 'search' : '' ?>">
             
-            <div class="filter-row">
-                <!-- Tìm kiếm -->
+            <!-- Tìm kiếm -->
+            <div class="search-container">
                 <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
                     <input type="text" name="q" placeholder="Tìm kiếm món ăn..." 
                            value="<?= e($_GET['q'] ?? '') ?>"
                            class="search-input">
-                    <button type="submit" class="search-btn">🔍</button>
-                </div>
-                
-                <!-- Lọc theo danh mục -->
-                <div class="filter-group">
-                    <label>Danh mục:</label>
-                    <select name="category" class="filter-select">
-                        <option value="">Tất cả danh mục</option>
-                        <?php if (isset($categories)): ?>
-                            <?php foreach ($categories as $category): ?>
-                                <option value="<?= $category['id'] ?>" 
-                                        <?= (isset($_GET['category']) && $_GET['category'] == $category['id']) ? 'selected' : '' ?>>
-                                    <?= e($category['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </select>
-                </div>
-                
-                <!-- Lọc theo trạng thái -->
-                <div class="filter-group">
-                    <label>Trạng thái:</label>
-                    <select name="status" class="filter-select">
-                        <option value="">Tất cả</option>
-                        <option value="available" <?= (isset($_GET['status']) && $_GET['status'] === 'available') ? 'selected' : '' ?>>
-                            Còn hàng
-                        </option>
-                        <option value="out_of_stock" <?= (isset($_GET['status']) && $_GET['status'] === 'out_of_stock') ? 'selected' : '' ?>>
-                            Hết hàng
-                        </option>
-                        <option value="sale" <?= (isset($_GET['status']) && $_GET['status'] === 'sale') ? 'selected' : '' ?>>
-                            Đang giảm giá
-                        </option>
-                    </select>
-                </div>
-                
-                <!-- Sắp xếp -->
-                <div class="filter-group">
-                    <label>Sắp xếp:</label>
-                    <select name="sort" class="filter-select">
-                        <option value="name" <?= (isset($_GET['sort']) && $_GET['sort'] === 'name') ? 'selected' : '' ?>>
-                            Tên A-Z
-                        </option>
-                        <option value="price_asc" <?= (isset($_GET['sort']) && $_GET['sort'] === 'price_asc') ? 'selected' : '' ?>>
-                            Giá thấp đến cao
-                        </option>
-                        <option value="price_desc" <?= (isset($_GET['sort']) && $_GET['sort'] === 'price_desc') ? 'selected' : '' ?>>
-                            Giá cao đến thấp
-                        </option>
-                        <option value="newest" <?= (isset($_GET['sort']) && $_GET['sort'] === 'newest') ? 'selected' : '' ?>>
-                            Mới nhất
-                        </option>
-                        <option value="popular" <?= (isset($_GET['sort']) && $_GET['sort'] === 'popular') ? 'selected' : '' ?>>
-                            Phổ biến
-                        </option>
-                    </select>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
             </div>
             
-            <!-- Lọc theo giá -->
-            <div class="price-filter">
-                <label>Khoảng giá:</label>
-                <div class="price-range">
-                    <input type="number" name="min_price" placeholder="Từ" 
-                           value="<?= e($_GET['min_price'] ?? '') ?>" 
-                           class="price-input" min="0">
-                    <span>-</span>
-                    <input type="number" name="max_price" placeholder="Đến" 
-                           value="<?= e($_GET['max_price'] ?? '') ?>" 
-                           class="price-input" min="0">
-                    <span>VNĐ</span>
+            <!-- Bộ lọc -->
+            <div class="filters-container">
+                <div class="filter-grid">
+                    <!-- Lọc theo danh mục -->
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-list"></i>
+                            DANH MỤC:
+                        </label>
+                        <select name="category" class="filter-select">
+                            <option value="">Tất cả danh mục</option>
+                            <?php if (isset($categories)): ?>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?= $category['id'] ?>" 
+                                            <?= (isset($_GET['category']) && $_GET['category'] == $category['id']) ? 'selected' : '' ?>>
+                                        <?= e($category['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    
+                    <!-- Lọc theo trạng thái -->
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-info-circle"></i>
+                            TRẠNG THÁI:
+                        </label>
+                        <select name="status" class="filter-select">
+                            <option value="">Tất cả</option>
+                            <option value="available" <?= (isset($_GET['status']) && $_GET['status'] === 'available') ? 'selected' : '' ?>>
+                                Còn hàng
+                            </option>
+                            <option value="out_of_stock" <?= (isset($_GET['status']) && $_GET['status'] === 'out_of_stock') ? 'selected' : '' ?>>
+                                Hết hàng
+                            </option>
+                            <option value="sale" <?= (isset($_GET['status']) && $_GET['status'] === 'sale') ? 'selected' : '' ?>>
+                                Đang giảm giá
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sắp xếp -->
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-sort"></i>
+                            SẮP XẾP:
+                        </label>
+                        <select name="sort" class="filter-select">
+                            <option value="name" <?= (isset($_GET['sort']) && $_GET['sort'] === 'name') ? 'selected' : '' ?>>
+                                Tên A-Z
+                            </option>
+                            <option value="price_asc" <?= (isset($_GET['sort']) && $_GET['sort'] === 'price_asc') ? 'selected' : '' ?>>
+                                Giá thấp đến cao
+                            </option>
+                            <option value="price_desc" <?= (isset($_GET['sort']) && $_GET['sort'] === 'price_desc') ? 'selected' : '' ?>>
+                                Giá cao đến thấp
+                            </option>
+                            <option value="newest" <?= (isset($_GET['sort']) && $_GET['sort'] === 'newest') ? 'selected' : '' ?>>
+                                Mới nhất
+                            </option>
+                            <option value="popular" <?= (isset($_GET['sort']) && $_GET['sort'] === 'popular') ? 'selected' : '' ?>>
+                                Phổ biến
+                            </option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="filter-actions">
-                <button type="submit" class="btn btn-primary">Lọc</button>
-                <a href="index.php?page=menu" class="btn btn-secondary">Xóa bộ lọc</a>
+                
+                <!-- Lọc theo giá -->
+                <div class="price-filter">
+                    <label class="filter-label">
+                        <i class="fas fa-dollar-sign"></i>
+                        KHOẢNG GIÁ:
+                    </label>
+                    <div class="price-range">
+                        <input type="number" name="min_price" placeholder="Từ" 
+                               value="<?= e($_GET['min_price'] ?? '') ?>" 
+                               class="price-input" min="0">
+                        <span class="price-separator">-</span>
+                        <input type="number" name="max_price" placeholder="Đến" 
+                               value="<?= e($_GET['max_price'] ?? '') ?>" 
+                               class="price-input" min="0">
+                        <span class="price-unit">VNĐ</span>
+                    </div>
+                </div>
+                
+                <!-- Nút hành động -->
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-filter">
+                        <i class="fas fa-filter"></i>
+                        LỌC
+                    </button>
+                    <a href="index.php?page=menu" class="btn btn-clear">
+                        <i class="fas fa-times"></i>
+                        XÓA BỘ LỌC
+                    </a>
+                </div>
             </div>
         </form>
     </div>
@@ -183,148 +210,321 @@ require_once 'views/layouts/header.php';
 <style>
 /* Filter Section Styles */
 .filter-section {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 10px;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    padding: 25px;
+    border-radius: 15px;
     margin-bottom: 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
 }
 
-.filter-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: end;
-    margin-bottom: 15px;
+/* Search Container */
+.search-container {
+    margin-bottom: 25px;
 }
 
 .search-box {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
     display: flex;
-    min-width: 300px;
-    flex: 1;
+    align-items: center;
+    background: white;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+    border-color: #ff6b35;
+    box-shadow: 0 4px 20px rgba(255, 107, 53, 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    left: 20px;
+    color: #999;
+    font-size: 16px;
+    z-index: 2;
 }
 
 .search-input {
     flex: 1;
-    padding: 10px 15px;
-    border: 2px solid #ddd;
-    border-radius: 25px 0 0 25px;
-    border-right: none;
-    font-size: 14px;
+    padding: 15px 20px 15px 50px;
+    border: none;
+    font-size: 16px;
     outline: none;
+    background: transparent;
+    color: #333;
 }
 
-.search-input:focus {
-    border-color: #ff6b35;
+.search-input::placeholder {
+    color: #999;
 }
 
 .search-btn {
-    padding: 10px 15px;
-    background: #ff6b35;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
     color: white;
-    border: 2px solid #ff6b35;
-    border-radius: 0 25px 25px 0;
+    border: none;
     cursor: pointer;
     font-size: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .search-btn:hover {
-    background: #e55a2b;
+    background: linear-gradient(135deg, #ff5722, #e64a19);
+    transform: translateX(-2px);
+}
+
+/* Filters Container */
+.filters-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
-    min-width: 150px;
 }
 
-.filter-group label {
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
-    margin-bottom: 5px;
-    color: #333;
+    margin-bottom: 8px;
+    color: #495057;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-label i {
+    color: #ff6b35;
     font-size: 14px;
 }
 
 .filter-select {
-    padding: 8px 12px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
     font-size: 14px;
     background: white;
     outline: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
-.filter-select:focus {
+.filter-select:focus,
+.filter-select:hover {
     border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
+/* Price Filter */
 .price-filter {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }
 
-.price-filter label {
-    font-weight: 600;
-    color: #333;
+.price-filter .filter-label {
+    margin-bottom: 12px;
 }
 
 .price-range {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .price-input {
-    width: 100px;
-    padding: 8px 12px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
     font-size: 14px;
     outline: none;
+    transition: all 0.3s ease;
 }
 
 .price-input:focus {
     border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
+.price-separator {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.price-unit {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Filter Actions */
 .filter-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
-.btn-primary {
-    background: #ff6b35;
-    color: white;
-    padding: 10px 20px;
+.btn {
+    padding: 12px 24px;
     border: none;
-    border-radius: 6px;
+    border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 140px;
+    justify-content: center;
 }
 
-.btn-primary:hover {
-    background: #e55a2b;
+.btn-filter {
+    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
 }
 
-.btn-secondary {
+.btn-filter:hover {
+    background: linear-gradient(135deg, #ff5722, #e64a19);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.btn-clear {
     background: #6c757d;
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
 }
 
-.btn-secondary:hover {
+.btn-clear:hover {
     background: #5a6268;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* Active Filter Indicator */
+.filter-select.active-filter,
+.filter-select:not([value=""]) {
+    border-color: #ff6b35;
+    background: rgba(255, 107, 53, 0.05);
+}
+
+.price-input.active-filter,
+.price-input:not(:placeholder-shown) {
+    border-color: #ff6b35;
+    background: rgba(255, 107, 53, 0.05);
+}
+
+.search-input.active-filter {
+    background: rgba(255, 107, 53, 0.05);
+}
+
+/* Loading State */
+.filter-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.filter-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ff6b35;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filter-section {
+        padding: 20px 15px;
+    }
+    
+    .search-box {
+        max-width: 100%;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .price-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-input {
+        min-width: auto;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-input {
+        padding: 12px 15px 12px 45px;
+        font-size: 14px;
+    }
+    
+    .search-btn {
+        padding: 12px 20px;
+    }
+    
+    .search-icon {
+        left: 15px;
+        font-size: 14px;
+    }
 }
 
 /* Results Info */
@@ -458,11 +658,30 @@ require_once 'views/layouts/header.php';
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const filterSelects = filterForm.querySelectorAll('.filter-select');
+    const searchInput = filterForm.querySelector('.search-input');
     
+    // Auto-submit when filter selects change
     filterSelects.forEach(select => {
         select.addEventListener('change', function() {
+            // If search is being used, set action to search
+            if (searchInput.value.trim()) {
+                filterForm.querySelector('input[name="action"]').value = 'search';
+            }
             filterForm.submit();
         });
+    });
+    
+    // Handle search input
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.trim()) {
+                filterForm.querySelector('input[name="action"]').value = 'search';
+            } else {
+                filterForm.querySelector('input[name="action"]').value = '';
+            }
+        }, 300);
     });
     
     // Debounce for price inputs
@@ -473,9 +692,57 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('input', function() {
             clearTimeout(priceTimeout);
             priceTimeout = setTimeout(() => {
+                // If search is being used, set action to search
+                if (searchInput.value.trim()) {
+                    filterForm.querySelector('input[name="action"]').value = 'search';
+                }
                 filterForm.submit();
             }, 1000); // Submit after 1 second of no typing
         });
+    });
+    
+    // Handle form submission
+    filterForm.addEventListener('submit', function(e) {
+        const searchValue = searchInput.value.trim();
+        if (searchValue) {
+            filterForm.querySelector('input[name="action"]').value = 'search';
+        } else {
+            filterForm.querySelector('input[name="action"]').value = '';
+        }
+    });
+    
+    // Add visual feedback for active filters
+    updateActiveFilters();
+    
+    function updateActiveFilters() {
+        // Highlight active filters
+        filterSelects.forEach(select => {
+            if (select.value) {
+                select.classList.add('active-filter');
+            } else {
+                select.classList.remove('active-filter');
+            }
+        });
+        
+        priceInputs.forEach(input => {
+            if (input.value) {
+                input.classList.add('active-filter');
+            } else {
+                input.classList.remove('active-filter');
+            }
+        });
+        
+        if (searchInput.value.trim()) {
+            searchInput.classList.add('active-filter');
+        } else {
+            searchInput.classList.remove('active-filter');
+        }
+    }
+    
+    // Update active filters on change
+    [...filterSelects, ...priceInputs, searchInput].forEach(element => {
+        element.addEventListener('change', updateActiveFilters);
+        element.addEventListener('input', updateActiveFilters);
     });
 });
 

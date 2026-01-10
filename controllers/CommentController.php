@@ -7,7 +7,155 @@ class CommentController {
         $this->db = Database::getInstance()->getConnection();
     }
     
-    // Hiển thị form bình luận cho đơn hàng đã giao
+    // Hiển thị trang đánh giá đơn hàng (tất cả sản phẩm)
+    public function showOrderReview() {
+        if (!isLoggedIn()) {
+            redirect('index.php?page=login');
+        }
+        
+        $orderId = $_GET['order_id'] ?? 0;
+        
+        // Lấy thông tin đơn hàng
+        $stmt = $this->db->prepare("
+            SELECT * FROM orders 
+            WHERE id = ? AND user_id = ? AND order_status = 'delivered'
+        ");
+        $stmt->execute([$orderId, $_SESSION['user_id']]);
+        $order = $stmt->fetch();
+        
+        if (!$order) {
+            setFlash('error', 'Không tìm thấy đơn hàng hoặc đơn hàng chưa được giao!');
+            redirect('index.php?page=orders');
+        }
+        
+        // Lấy danh sách sản phẩm trong đơn hàng
+        $stmt = $this->db->prepare("
+            SELECT oi.*, p.name as current_product_name, pi.image_url as current_product_image
+            FROM order_items oi
+            LEFT JOIN products p ON oi.product_id = p.id
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+            WHERE oi.order_id = ?
+        ");
+        $stmt->execute([$orderId]);
+        $orderItems = $stmt->fetchAll();
+        
+        // Kiểm tra sản phẩm nào đã được đánh giá
+        $allReviewed = true;
+        foreach ($orderItems as &$item) {
+            $stmt = $this->db->prepare("
+                SELECT id FROM comments 
+                WHERE user_id = ? AND order_id = ? AND product_id = ?
+            ");
+            $stmt->execute([$_SESSION['user_id'], $orderId, $item['product_id']]);
+            $item['already_reviewed'] = $stmt->fetch() ? true : false;
+            
+            // Nếu có ít nhất 1 sản phẩm chưa được đánh giá
+            if (!$item['already_reviewed']) {
+                $allReviewed = false;
+            }
+        }
+        
+        // Nếu tất cả sản phẩm đã được đánh giá, chuyển hướng với thông báo
+        if ($allReviewed) {
+            setFlash('info', 'Tất cả sản phẩm trong đơn hàng này đã được đánh giá!');
+            redirect('index.php?page=orders&action=detail&id=' . $orderId);
+        }
+        
+        require_once 'views/comments/order_review.php';
+    }
+    
+    // Xử lý submit đánh giá nhiều sản phẩm
+    public function submitOrderReviews() {
+        if (!isLoggedIn()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập']);
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Phương thức không hợp lệ']);
+            exit;
+        }
+        
+        $orderId = $_POST['order_id'] ?? 0;
+        $reviewsJson = $_POST['reviews'] ?? '';
+        
+        try {
+            $reviews = json_decode($reviewsJson, true);
+            
+            if (!$reviews || !is_array($reviews)) {
+                throw new Exception('Dữ liệu đánh giá không hợp lệ');
+            }
+            
+            // Kiểm tra đơn hàng
+            $stmt = $this->db->prepare("
+                SELECT id FROM orders 
+                WHERE id = ? AND user_id = ? AND order_status = 'delivered'
+            ");
+            $stmt->execute([$orderId, $_SESSION['user_id']]);
+            $validOrder = $stmt->fetch();
+            
+            if (!$validOrder) {
+                throw new Exception('Đơn hàng không hợp lệ');
+            }
+            
+            $this->db->beginTransaction();
+            
+            foreach ($reviews as $review) {
+                $productId = $review['product_id'] ?? 0;
+                $rating = 5; // Mặc định 5 sao
+                $content = sanitize($review['content'] ?? '');
+                
+                // Validate
+                if (empty($content)) {
+                    throw new Exception('Vui lòng nhập nội dung đánh giá');
+                }
+                
+                // Kiểm tra sản phẩm có trong đơn hàng không
+                $stmt = $this->db->prepare("
+                    SELECT id FROM order_items 
+                    WHERE order_id = ? AND product_id = ?
+                ");
+                $stmt->execute([$orderId, $productId]);
+                $validProduct = $stmt->fetch();
+                
+                if (!$validProduct) {
+                    throw new Exception('Sản phẩm không có trong đơn hàng');
+                }
+                
+                // Kiểm tra đã đánh giá chưa
+                $stmt = $this->db->prepare("
+                    SELECT id FROM comments 
+                    WHERE user_id = ? AND order_id = ? AND product_id = ?
+                ");
+                $stmt->execute([$_SESSION['user_id'], $orderId, $productId]);
+                $existingComment = $stmt->fetch();
+                
+                if ($existingComment) {
+                    continue; // Bỏ qua nếu đã đánh giá
+                }
+                
+                // Thêm đánh giá
+                $stmt = $this->db->prepare("
+                    INSERT INTO comments (user_id, product_id, order_id, content, rating, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'approved', NOW())
+                ");
+                $stmt->execute([$_SESSION['user_id'], $productId, $orderId, $content, $rating]);
+            }
+            
+            $this->db->commit();
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Đánh giá đã được gửi thành công']);
+            
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
     public function showOrderCommentForm() {
         if (!isLoggedIn()) {
             redirect('index.php?page=login');
@@ -61,11 +209,11 @@ class CommentController {
         $orderId = $_POST['order_id'] ?? 0;
         $productId = $_POST['product_id'] ?? 0;
         $content = sanitize($_POST['content'] ?? '');
-        $rating = (int)($_POST['rating'] ?? 0);
+        $rating = 5; // Mặc định 5 sao
         
         // Validate
-        if (empty($content) || $rating < 1 || $rating > 5) {
-            setFlash('error', 'Vui lòng nhập nội dung bình luận và chọn đánh giá từ 1-5 sao!');
+        if (empty($content)) {
+            setFlash('error', 'Vui lòng nhập nội dung bình luận!');
             redirect('index.php?page=comments&action=form&order_id=' . $orderId . '&product_id=' . $productId);
         }
         
