@@ -22,6 +22,8 @@ class ProfileController {
             redirect('index.php?page=login');
         }
         
+        $editMode = $_GET['edit'] ?? false;
+        
         require_once 'views/profile.php';
     }
     
@@ -36,7 +38,7 @@ class ProfileController {
         
         if (empty($fullName)) {
             setFlash('error', 'Vui lòng nhập họ tên!');
-            redirect('index.php?page=profile');
+            redirect('index.php?page=profile&edit=1');
         }
         
         $stmt = $this->db->prepare("

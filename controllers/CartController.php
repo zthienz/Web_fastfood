@@ -177,6 +177,16 @@ class CartController {
         $stmt->execute([$_SESSION['user_id']]);
         $user = $stmt->fetch();
         
+        // Kiểm tra xem user đã có địa chỉ chưa
+        $requireAddressInput = empty(trim($user['address'] ?? ''));
+        
+        // Nếu chưa có địa chỉ và không phải từ form cập nhật địa chỉ
+        if ($requireAddressInput && !isset($_POST['address_updated'])) {
+            // Hiển thị form yêu cầu nhập địa chỉ
+            require_once 'views/cart/address_required.php';
+            return;
+        }
+        
         // Lấy thông tin sản phẩm được chọn
         $checkoutItems = [];
         $subtotal = 0;
@@ -245,6 +255,16 @@ class CartController {
         if (empty($customerName) || empty($customerPhone) || empty($shippingAddress)) {
             setFlash('error', 'Vui lòng điền đầy đủ thông tin giao hàng!');
             redirect('index.php?page=cart&action=checkout');
+        }
+        
+        // Cập nhật địa chỉ vào database nếu khác với địa chỉ hiện tại
+        $stmt = $this->db->prepare("SELECT address FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $currentUser = $stmt->fetch();
+        
+        if ($currentUser && $currentUser['address'] !== $shippingAddress) {
+            $stmt = $this->db->prepare("UPDATE users SET address = ? WHERE id = ?");
+            $stmt->execute([$shippingAddress, $_SESSION['user_id']]);
         }
         
         // Lọc giỏ hàng chỉ lấy các món được chọn
@@ -414,5 +434,46 @@ class CartController {
         $orderItems = $stmt->fetchAll();
         
         require_once 'views/cart/success.php';
+    }
+    
+    // Xử lý cập nhật địa chỉ từ trang checkout
+    public function updateAddress() {
+        if (!isLoggedIn()) {
+            setFlash('error', 'Vui lòng đăng nhập!');
+            redirect('index.php?page=login');
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('index.php?page=cart');
+        }
+        
+        $address = sanitize($_POST['address'] ?? '');
+        $fullName = sanitize($_POST['full_name'] ?? '');
+        $phone = sanitize($_POST['phone'] ?? '');
+        
+        if (empty($address)) {
+            setFlash('error', 'Vui lòng nhập địa chỉ!');
+            redirect('index.php?page=cart&action=checkout');
+        }
+        
+        // Cập nhật thông tin user
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET address = ?, full_name = ?, phone = ?
+            WHERE id = ?
+        ");
+        
+        if ($stmt->execute([$address, $fullName, $phone, $_SESSION['user_id']])) {
+            // Cập nhật session
+            $_SESSION['full_name'] = $fullName;
+            setFlash('success', 'Đã cập nhật thông tin thành công!');
+            
+            // Redirect về checkout với flag đã cập nhật địa chỉ
+            $_POST['address_updated'] = true;
+            $this->checkout();
+        } else {
+            setFlash('error', 'Có lỗi xảy ra, vui lòng thử lại!');
+            redirect('index.php?page=cart&action=checkout');
+        }
     }
 }

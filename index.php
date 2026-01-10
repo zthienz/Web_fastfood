@@ -17,6 +17,7 @@ require_once 'controllers/OrderController.php';
 require_once 'controllers/ProfileController.php';
 require_once 'controllers/PostController.php';
 require_once 'controllers/FavoritesController.php';
+require_once 'controllers/CommentController.php';
 
 // Admin Controllers
 require_once 'controllers/AdminController.php';
@@ -121,6 +122,9 @@ switch ($page) {
             case 'checkout':
                 $controller->checkout();
                 break;
+            case 'updateAddress':
+                $controller->updateAddress();
+                break;
             case 'placeOrder':
                 $controller->placeOrder();
                 break;
@@ -132,9 +136,27 @@ switch ($page) {
         }
         break;
         
+    case 'comments':
+        $controller = new CommentController();
+        switch ($action) {
+            case 'form':
+                $controller->showOrderCommentForm();
+                break;
+            case 'submit':
+                $controller->submitOrderComment();
+                break;
+            default:
+                redirect('index.php');
+        }
+        break;
+        
     case 'orders':
         $controller = new OrderController();
-        $controller->index();
+        if ($action === 'detail') {
+            $controller->detail();
+        } else {
+            $controller->index();
+        }
         break;
         
     // Admin Routes

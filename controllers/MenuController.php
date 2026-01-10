@@ -19,6 +19,18 @@ class MenuController {
             $favoritesTableExists = false;
         }
         
+        // Lấy danh sách categories để hiển thị filter
+        $categoriesStmt = $this->db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order ASC, name ASC");
+        $categories = $categoriesStmt->fetchAll();
+        
+        // Xử lý các tham số lọc
+        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
+        $minPrice = isset($_GET['min_price']) ? (float)$_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) ? (float)$_GET['max_price'] : null;
+        $status = isset($_GET['status']) ? sanitize($_GET['status']) : null;
+        $sortBy = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'name';
+        
+        // Xây dựng câu query với điều kiện lọc
         $sql = "
             SELECT p.*, c.name as category_name, pi.image_url as primary_image";
         
@@ -35,20 +47,75 @@ class MenuController {
             $sql .= " LEFT JOIN favorites f ON p.id = f.product_id AND f.user_id = ?";
         }
         
-        $sql .= "
-            WHERE p.status = 'active'
-            ORDER BY p.name ASC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
+        // Điều kiện WHERE
+        $whereConditions = ["p.status != 'inactive'"];
+        $params = [];
         
         if ($userId && $favoritesTableExists) {
-            $stmt->execute([$userId]);
-        } else {
-            $stmt->execute();
+            $params[] = $userId;
         }
         
+        // Lọc theo danh mục
+        if ($categoryId) {
+            $whereConditions[] = "p.category_id = ?";
+            $params[] = $categoryId;
+        }
+        
+        // Lọc theo giá
+        if ($minPrice !== null) {
+            $whereConditions[] = "COALESCE(p.sale_price, p.price) >= ?";
+            $params[] = $minPrice;
+        }
+        
+        if ($maxPrice !== null) {
+            $whereConditions[] = "COALESCE(p.sale_price, p.price) <= ?";
+            $params[] = $maxPrice;
+        }
+        
+        // Lọc theo trạng thái
+        if ($status) {
+            if ($status === 'available') {
+                $whereConditions[] = "p.status = 'active' AND p.stock_quantity > 0";
+            } elseif ($status === 'out_of_stock') {
+                $whereConditions[] = "(p.status = 'out_of_stock' OR p.stock_quantity <= 0)";
+            } elseif ($status === 'sale') {
+                $whereConditions[] = "p.sale_price IS NOT NULL AND p.sale_price > 0";
+            }
+        }
+        
+        $sql .= " WHERE " . implode(" AND ", $whereConditions);
+        
+        // Sắp xếp
+        switch ($sortBy) {
+            case 'price_asc':
+                $sql .= " ORDER BY COALESCE(p.sale_price, p.price) ASC";
+                break;
+            case 'price_desc':
+                $sql .= " ORDER BY COALESCE(p.sale_price, p.price) DESC";
+                break;
+            case 'newest':
+                $sql .= " ORDER BY p.created_at DESC";
+                break;
+            case 'popular':
+                $sql .= " ORDER BY p.views DESC";
+                break;
+            default:
+                $sql .= " ORDER BY p.name ASC";
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         $products = $stmt->fetchAll();
+        
+        // Lấy khoảng giá để hiển thị slider
+        $priceRangeStmt = $this->db->query("
+            SELECT 
+                MIN(COALESCE(sale_price, price)) as min_price,
+                MAX(COALESCE(sale_price, price)) as max_price
+            FROM products 
+            WHERE status != 'inactive'
+        ");
+        $priceRange = $priceRangeStmt->fetch();
         
         require_once 'views/menu/index.php';
     }
@@ -72,6 +139,17 @@ class MenuController {
             $favoritesTableExists = false;
         }
         
+        // Lấy danh sách categories để hiển thị filter
+        $categoriesStmt = $this->db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order ASC, name ASC");
+        $categories = $categoriesStmt->fetchAll();
+        
+        // Xử lý các tham số lọc (giống như index)
+        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
+        $minPrice = isset($_GET['min_price']) ? (float)$_GET['min_price'] : null;
+        $maxPrice = isset($_GET['max_price']) ? (float)$_GET['max_price'] : null;
+        $status = isset($_GET['status']) ? sanitize($_GET['status']) : null;
+        $sortBy = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'name';
+        
         $sql = "
             SELECT p.*, c.name as category_name, pi.image_url as primary_image";
         
@@ -88,21 +166,77 @@ class MenuController {
             $sql .= " LEFT JOIN favorites f ON p.id = f.product_id AND f.user_id = ?";
         }
         
-        $sql .= "
-            WHERE p.status = 'active' AND (p.name LIKE ? OR p.description LIKE ?)
-            ORDER BY p.name ASC
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        $searchTerm = "%$keyword%";
+        // Điều kiện WHERE với tìm kiếm
+        $whereConditions = ["p.status != 'inactive'", "(p.name LIKE ? OR p.description LIKE ?)"];
+        $params = [];
         
         if ($userId && $favoritesTableExists) {
-            $stmt->execute([$userId, $searchTerm, $searchTerm]);
-        } else {
-            $stmt->execute([$searchTerm, $searchTerm]);
+            $params[] = $userId;
         }
         
+        $searchTerm = "%$keyword%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        
+        // Thêm các điều kiện lọc khác
+        if ($categoryId) {
+            $whereConditions[] = "p.category_id = ?";
+            $params[] = $categoryId;
+        }
+        
+        if ($minPrice !== null) {
+            $whereConditions[] = "COALESCE(p.sale_price, p.price) >= ?";
+            $params[] = $minPrice;
+        }
+        
+        if ($maxPrice !== null) {
+            $whereConditions[] = "COALESCE(p.sale_price, p.price) <= ?";
+            $params[] = $maxPrice;
+        }
+        
+        if ($status) {
+            if ($status === 'available') {
+                $whereConditions[] = "p.status = 'active' AND p.stock_quantity > 0";
+            } elseif ($status === 'out_of_stock') {
+                $whereConditions[] = "(p.status = 'out_of_stock' OR p.stock_quantity <= 0)";
+            } elseif ($status === 'sale') {
+                $whereConditions[] = "p.sale_price IS NOT NULL AND p.sale_price > 0";
+            }
+        }
+        
+        $sql .= " WHERE " . implode(" AND ", $whereConditions);
+        
+        // Sắp xếp
+        switch ($sortBy) {
+            case 'price_asc':
+                $sql .= " ORDER BY COALESCE(p.sale_price, p.price) ASC";
+                break;
+            case 'price_desc':
+                $sql .= " ORDER BY COALESCE(p.sale_price, p.price) DESC";
+                break;
+            case 'newest':
+                $sql .= " ORDER BY p.created_at DESC";
+                break;
+            case 'popular':
+                $sql .= " ORDER BY p.views DESC";
+                break;
+            default:
+                $sql .= " ORDER BY p.name ASC";
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         $products = $stmt->fetchAll();
+        
+        // Lấy khoảng giá để hiển thị slider
+        $priceRangeStmt = $this->db->query("
+            SELECT 
+                MIN(COALESCE(sale_price, price)) as min_price,
+                MAX(COALESCE(sale_price, price)) as max_price
+            FROM products 
+            WHERE status != 'inactive'
+        ");
+        $priceRange = $priceRangeStmt->fetch();
         
         require_once 'views/menu/index.php';
     }
@@ -156,6 +290,14 @@ class MenuController {
         $relatedStmt = $this->db->prepare($relatedSql);
         $relatedStmt->execute([$product['category_id'], $productId]);
         $relatedProducts = $relatedStmt->fetchAll();
+        
+        // Lấy bình luận và đánh giá của sản phẩm
+        require_once 'controllers/CommentController.php';
+        $commentController = new CommentController();
+        
+        $comments = $commentController->getProductComments($productId, 10, 0);
+        $totalComments = $commentController->countProductComments($productId);
+        $productRating = $commentController->getProductRating($productId);
         
         require_once 'views/menu/detail.php';
     }

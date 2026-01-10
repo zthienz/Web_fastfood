@@ -49,11 +49,20 @@ class OrderController {
         
         // Lấy chi tiết sản phẩm trong đơn
         $stmt = $this->db->prepare("
-            SELECT * FROM order_items 
-            WHERE order_id = ?
+            SELECT oi.*, p.id as current_product_id, p.name as current_product_name,
+                   c.id as comment_id, c.rating, c.content as comment_content, c.created_at as comment_date,
+                   pi.image_url as current_product_image
+            FROM order_items oi
+            LEFT JOIN products p ON oi.product_id = p.id
+            LEFT JOIN comments c ON c.order_id = oi.order_id AND c.product_id = oi.product_id AND c.user_id = ?
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+            WHERE oi.order_id = ?
         ");
-        $stmt->execute([$orderId]);
+        $stmt->execute([$_SESSION['user_id'], $orderId]);
         $orderItems = $stmt->fetchAll();
+        
+        // Đặt biến global để sử dụng trong view
+        $GLOBALS['db'] = $this->db;
         
         require_once 'views/orders/detail.php';
     }
