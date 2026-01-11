@@ -69,12 +69,13 @@ require_once 'views/layouts/header.php';
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <form method="POST" action="index.php?page=cart&action=update" style="display: inline;">
-                                    <input type="hidden" name="id" value="<?= $item['product']['id'] ?>">
-                                    <input type="number" name="quantity" value="<?= $item['quantity'] ?>" 
-                                           min="1" style="width: 60px; padding: 5px;">
-                                    <button type="submit" class="btn-update">Cập nhật</button>
-                                </form>
+                                <input type="number" 
+                                       name="quantity" 
+                                       value="<?= $item['quantity'] ?>" 
+                                       min="1" 
+                                       style="width: 60px; padding: 5px;"
+                                       data-product-id="<?= $item['product']['id'] ?>"
+                                       onchange="updateQuantity(this)">
                             </td>
                             <td><strong><?= formatMoney($item['subtotal']) ?></strong></td>
                             <td>
@@ -242,10 +243,11 @@ require_once 'views/layouts/header.php';
 
 .select-all-label {
     font-weight: 600;
-    color: #333;
+    color: inherit;
     cursor: pointer;
     user-select: none;
-    font-size: 14px;
+    font-size: inherit;
+    white-space: nowrap;
 }
 
 .select-all-label:hover {
@@ -314,25 +316,6 @@ require_once 'views/layouts/header.php';
     box-shadow: 0 6px 20px rgba(117, 117, 117, 0.4);
     color: white;
     text-decoration: none;
-}
-
-.btn-update {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-    font-size: 12px;
-}
-
-.btn-update:hover {
-    background: linear-gradient(135deg, #45a049, #3d8b40);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .btn-delete {
@@ -451,6 +434,45 @@ function formatMoney(amount) {
         style: 'currency',
         currency: 'VND'
     }).format(amount).replace('₫', 'đ');
+}
+
+// Cập nhật số lượng sản phẩm bằng AJAX
+function updateQuantity(input) {
+    const productId = input.dataset.productId;
+    const quantity = parseInt(input.value);
+    
+    if (quantity < 1) {
+        input.value = 1;
+        return;
+    }
+    
+    // Hiển thị loading
+    input.disabled = true;
+    
+    // Gửi AJAX request
+    fetch('index.php?page=cart&action=update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `id=${productId}&quantity=${quantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload trang để cập nhật giá tiền
+            window.location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+            input.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi cập nhật số lượng!');
+        input.disabled = false;
+    });
 }
 
 // Ngăn chặn submit form nếu không có món nào được chọn

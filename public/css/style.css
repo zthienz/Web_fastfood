@@ -64,6 +64,37 @@ nav a:hover {
     font-weight: 500;
 }
 
+/* Cart Badge */
+.cart-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
 /* User Menu */
 .user-menu {
     position: relative;

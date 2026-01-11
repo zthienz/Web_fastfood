@@ -30,6 +30,17 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Phân loại bài viết <span class="required">*</span></label>
+                    <select name="category" required class="form-control">
+                        <option value="">-- Chọn phân loại --</option>
+                        <option value="ĐÁNH GIÁ SẢN PHẨM">ĐÁNH GIÁ SẢN PHẨM</option>
+                        <option value="HƯỚNG DẪN">HƯỚNG DẪN</option>
+                        <option value="TIN TỨC">TIN TỨC</option>
+                        <option value="KHUYẾN MÃI">KHUYẾN MÃI</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label>Nội dung <span class="required">*</span></label>
                     <textarea name="content" rows="15" required class="form-control"></textarea>
                     <small class="form-hint">Hỗ trợ HTML</small>

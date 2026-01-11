@@ -50,13 +50,24 @@ class CartController {
     public function add() {
         // Kiểm tra đăng nhập trước
         if (!isLoggedIn()) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thêm món ăn vào giỏ hàng!', 'redirect' => 'index.php?page=login']);
+                exit;
+            }
             setFlash('error', 'Vui lòng đăng nhập hoặc đăng ký để thêm món ăn vào giỏ hàng!');
             redirect('index.php?page=login');
         }
         
-        $id = intval($_GET['id'] ?? 0);
+        $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
+        $quantity = intval($_GET['quantity'] ?? $_POST['quantity'] ?? 1);
         
         if ($id <= 0) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Sản phẩm không hợp lệ!']);
+                exit;
+            }
             redirect('index.php?page=menu');
         }
         
@@ -70,23 +81,43 @@ class CartController {
         $product = $stmt->fetch();
         
         if (!$product) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Món ăn không tồn tại!']);
+                exit;
+            }
             setFlash('error', 'Món ăn không tồn tại!');
             redirect('index.php?page=menu');
         }
         
         // Kiểm tra trạng thái
         if ($product['status'] === 'out_of_stock') {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Món ăn đã hết hàng!']);
+                exit;
+            }
             setFlash('error', 'Món ăn đã hết hàng!');
             redirect('index.php?page=menu');
         }
         
         if ($product['status'] !== 'active') {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Món ăn hiện không khả dụng!']);
+                exit;
+            }
             setFlash('error', 'Món ăn hiện không khả dụng!');
             redirect('index.php?page=menu');
         }
         
         // Kiểm tra tồn kho
         if ($product['stock_quantity'] <= 0) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Món ăn đã hết hàng!']);
+                exit;
+            }
             setFlash('error', 'Món ăn đã hết hàng!');
             redirect('index.php?page=menu');
         }
@@ -97,23 +128,61 @@ class CartController {
         
         // Kiểm tra số lượng trong giỏ
         $currentQty = $_SESSION['cart'][$id] ?? 0;
-        if ($currentQty >= $product['stock_quantity']) {
+        $newQty = $currentQty + $quantity;
+        
+        if ($newQty > $product['stock_quantity']) {
+            $availableQty = $product['stock_quantity'] - $currentQty;
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'message' => $availableQty > 0 ? 
+                        "Chỉ có thể thêm tối đa {$availableQty} sản phẩm nữa!" : 
+                        "Không thể thêm! Tồn kho chỉ còn {$product['stock_quantity']} sản phẩm và bạn đã có {$currentQty} trong giỏ hàng."
+                ]);
+                exit;
+            }
             setFlash('error', 'Không thể thêm! Tồn kho chỉ còn ' . $product['stock_quantity'] . ' sản phẩm.');
-            redirect('index.php?page=menu');
+            $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?page=menu';
+            redirect($referer);
         }
         
+        // Thêm vào giỏ hàng
         if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]++;
+            $_SESSION['cart'][$id] += $quantity;
         } else {
-            $_SESSION['cart'][$id] = 1;
+            $_SESSION['cart'][$id] = $quantity;
+        }
+        
+        // Tính tổng số lượng trong giỏ hàng
+        $totalItems = array_sum($_SESSION['cart']);
+        
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true, 
+                'message' => "Đã thêm {$quantity} {$product['name']} vào giỏ hàng!",
+                'cart_count' => $totalItems,
+                'product_name' => $product['name'],
+                'quantity_added' => $quantity
+            ]);
+            exit;
         }
         
         setFlash('success', 'Đã thêm vào giỏ hàng!');
-        redirect('index.php?page=cart');
+        
+        // Quay lại trang trước đó thay vì redirect đến giỏ hàng
+        $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?page=menu';
+        redirect($referer);
     }
     
     public function update() {
         if (!isLoggedIn()) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập!']);
+                exit;
+            }
             setFlash('error', 'Vui lòng đăng nhập!');
             redirect('index.php?page=login');
         }
@@ -126,8 +195,38 @@ class CartController {
         $quantity = intval($_POST['quantity'] ?? 0);
         
         if ($id > 0 && $quantity > 0 && isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id] = $quantity;
-            setFlash('success', 'Đã cập nhật giỏ hàng!');
+            // Kiểm tra tồn kho trước khi cập nhật
+            $stmt = $this->db->prepare("SELECT name, stock_quantity FROM products WHERE id = ?");
+            $stmt->execute([$id]);
+            $product = $stmt->fetch();
+            
+            if ($product && $quantity <= $product['stock_quantity']) {
+                $_SESSION['cart'][$id] = $quantity;
+                
+                // Nếu là AJAX request, trả về JSON
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                    echo json_encode(['success' => true, 'message' => 'Đã cập nhật số lượng!']);
+                    exit;
+                }
+                
+                setFlash('success', 'Đã cập nhật số lượng!');
+            } else {
+                // Nếu là AJAX request, trả về JSON
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                    echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho có sẵn!']);
+                    exit;
+                }
+                
+                setFlash('error', 'Số lượng vượt quá tồn kho có sẵn!');
+            }
+        } else {
+            // Nếu là AJAX request, trả về JSON
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                echo json_encode(['success' => false, 'message' => 'Thông tin không hợp lệ!']);
+                exit;
+            }
+            
+            setFlash('error', 'Thông tin không hợp lệ!');
         }
         
         redirect('index.php?page=cart');

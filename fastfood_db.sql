@@ -68,6 +68,22 @@ CREATE TABLE IF NOT EXISTS products (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- Bảng: product_images (Hình ảnh món ăn)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS product_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    alt_text VARCHAR(255),
+    is_primary BOOLEAN DEFAULT FALSE COMMENT 'Ảnh chính của sản phẩm',
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    INDEX idx_product (product_id),
+    INDEX idx_primary (is_primary)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- Bảng: posts (Bài viết/Tin tức)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS posts (
@@ -88,22 +104,6 @@ CREATE TABLE IF NOT EXISTS posts (
     INDEX idx_slug (slug),
     INDEX idx_status (status),
     INDEX idx_published (published_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================
--- Bảng: product_images (Hình ảnh món ăn)
--- =====================================================
-CREATE TABLE IF NOT EXISTS product_images (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT NOT NULL,
-    image_url VARCHAR(255) NOT NULL,
-    alt_text VARCHAR(255),
-    is_primary BOOLEAN DEFAULT FALSE COMMENT 'Ảnh chính của sản phẩm',
-    display_order INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    INDEX idx_product (product_id),
-    INDEX idx_primary (is_primary)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -218,29 +218,6 @@ CREATE TABLE IF NOT EXISTS cart (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
--- =====================================================
--- Bảng: coupons (Mã giảm giá)
--- =====================================================
-CREATE TABLE IF NOT EXISTS coupons (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT,
-    discount_type ENUM('percentage', 'fixed') NOT NULL,
-    discount_value DECIMAL(10, 2) NOT NULL,
-    min_order_value DECIMAL(10, 2) DEFAULT 0,
-    max_discount DECIMAL(10, 2),
-    usage_limit INT DEFAULT NULL COMMENT 'NULL = unlimited',
-    used_count INT DEFAULT 0,
-    status ENUM('active', 'inactive', 'expired') DEFAULT 'active',
-    start_date TIMESTAMP NULL,
-    end_date TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_code (code),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- =====================================================
 -- Bảng: order_status_history (Lịch sử trạng thái đơn hàng)
 -- =====================================================
@@ -257,40 +234,9 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- Bảng: notifications (Thông báo)
+-- Bảng: favorites (Danh sách yêu thích)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS notifications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    type ENUM('order', 'payment', 'comment', 'system') DEFAULT 'system',
-    related_id INT COMMENT 'ID of related order, comment, etc.',
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user (user_id),
-    INDEX idx_read (is_read),
-    INDEX idx_type (type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================
--- Bảng: settings (Cài đặt hệ thống)
--- =====================================================
-CREATE TABLE IF NOT EXISTS settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    setting_key VARCHAR(100) NOT NULL UNIQUE,
-    setting_value TEXT,
-    setting_type ENUM('text', 'number', 'boolean', 'json') DEFAULT 'text',
-    description TEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_key (setting_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================
--- Bảng: wishlist (Danh sách yêu thích)
--- =====================================================
-CREATE TABLE IF NOT EXISTS wishlist (
+CREATE TABLE IF NOT EXISTS favorites (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -298,7 +244,26 @@ CREATE TABLE IF NOT EXISTS wishlist (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_product (user_id, product_id),
-    INDEX idx_user (user_id)
+    INDEX idx_user (user_id),
+    INDEX idx_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Bảng: contacts (Liên hệ từ khách hàng)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS contacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    subject VARCHAR(255),
+    message TEXT NOT NULL,
+    status ENUM('new', 'read', 'replied') DEFAULT 'new',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_created (created_at),
+    INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -340,40 +305,31 @@ INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display
 (1, 'public/images/products/burger-bo-1.jpg', 'Burger Bò Phô Mai - Ảnh chính', TRUE, 1),
 (1, 'public/images/products/burger-bo-2.jpg', 'Burger Bò Phô Mai - Góc cạnh', FALSE, 2),
 (1, 'public/images/products/burger-bo-3.jpg', 'Burger Bò Phô Mai - Chi tiết', FALSE, 3),
-
 -- Burger Gà Giòn (product_id = 2)
 (2, 'public/images/products/burger-ga-1.jpg', 'Burger Gà Giòn - Ảnh chính', TRUE, 1),
 (2, 'public/images/products/burger-ga-2.jpg', 'Burger Gà Giòn - Góc cạnh', FALSE, 2),
-
 -- Pizza Hải Sản (product_id = 3)
 (3, 'public/images/products/pizza-haisan-1.jpg', 'Pizza Hải Sản - Ảnh chính', TRUE, 1),
 (3, 'public/images/products/pizza-haisan-2.jpg', 'Pizza Hải Sản - Topping', FALSE, 2),
 (3, 'public/images/products/pizza-haisan-3.jpg', 'Pizza Hải Sản - Cắt miếng', FALSE, 3),
 (3, 'public/images/products/pizza-haisan-4.jpg', 'Pizza Hải Sản - Đóng hộp', FALSE, 4),
-
 -- Pizza Xúc Xích (product_id = 4)
 (4, 'public/images/products/pizza-xucxich-1.jpg', 'Pizza Xúc Xích - Ảnh chính', TRUE, 1),
 (4, 'public/images/products/pizza-xucxich-2.jpg', 'Pizza Xúc Xích - Chi tiết', FALSE, 2),
-
 -- Gà Rán Giòn (product_id = 5)
 (5, 'public/images/products/ga-ran-1.jpg', 'Gà Rán Giòn - Ảnh chính', TRUE, 1),
 (5, 'public/images/products/ga-ran-2.jpg', 'Gà Rán Giòn - Combo', FALSE, 2),
 (5, 'public/images/products/ga-ran-3.jpg', 'Gà Rán Giòn - Cận cảnh', FALSE, 3),
-
 -- Cánh Gà Sốt BBQ (product_id = 6)
 (6, 'public/images/products/canh-ga-bbq-1.jpg', 'Cánh Gà Sốt BBQ - Ảnh chính', TRUE, 1),
 (6, 'public/images/products/canh-ga-bbq-2.jpg', 'Cánh Gà Sốt BBQ - Đĩa', FALSE, 2),
-
 -- Coca Cola (product_id = 7)
 (7, 'public/images/products/coca-1.jpg', 'Coca Cola - Ảnh chính', TRUE, 1),
-
 -- Trà Đào Cam Sả (product_id = 8)
 (8, 'public/images/products/tra-dao-1.jpg', 'Trà Đào Cam Sả - Ảnh chính', TRUE, 1),
 (8, 'public/images/products/tra-dao-2.jpg', 'Trà Đào Cam Sả - Ly to', FALSE, 2),
-
 -- Khoai Tây Chiên (product_id = 9)
 (9, 'public/images/products/khoai-tay-1.jpg', 'Khoai Tây Chiên - Ảnh chính', TRUE, 1),
-
 -- Salad Rau Củ (product_id = 10)
 (10, 'public/images/products/salad-1.jpg', 'Salad Rau Củ - Ảnh chính', TRUE, 1),
 (10, 'public/images/products/salad-2.jpg', 'Salad Rau Củ - Tươi mát', FALSE, 2);
@@ -382,20 +338,6 @@ INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display
 INSERT INTO posts (author_id, title, slug, content, excerpt, status, published_at) VALUES
 (1, 'Chào mừng đến với FastFood', 'chao-mung-den-voi-fastfood', 'Chúng tôi rất vui mừng được phục vụ quý khách với những món ăn nhanh chất lượng cao nhất...', 'Giới thiệu về nhà hàng FastFood', 'published', NOW()),
 (1, 'Khuyến mãi tháng 12', 'khuyen-mai-thang-12', 'Nhân dịp cuối năm, FastFood giảm giá 20% cho tất cả các món burger...', 'Chương trình khuyến mãi hấp dẫn', 'published', NOW());
-
--- Mã giảm giá mẫu
-INSERT INTO coupons (code, description, discount_type, discount_value, min_order_value, max_discount, usage_limit, status, start_date, end_date) VALUES
-('WELCOME10', 'Giảm 10% cho đơn hàng đầu tiên', 'percentage', 10, 100000, 50000, NULL, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)),
-('FREESHIP', 'Miễn phí vận chuyển cho đơn từ 200k', 'fixed', 30000, 200000, 30000, 100, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY));
-
--- Cài đặt hệ thống
-INSERT INTO settings (setting_key, setting_value, setting_type, description) VALUES
-('site_name', 'FastFood Restaurant', 'text', 'Tên website'),
-('site_email', 'contact@fastfood.com', 'text', 'Email liên hệ'),
-('site_phone', '1900-xxxx', 'text', 'Số điện thoại'),
-('shipping_fee', '30000', 'number', 'Phí vận chuyển mặc định'),
-('free_shipping_min', '200000', 'number', 'Đơn hàng tối thiểu để miễn phí ship'),
-('order_auto_cancel', '24', 'number', 'Tự động hủy đơn sau X giờ nếu không xác nhận');
 
 -- =====================================================
 -- VIEWS (Các view hữu ích cho báo cáo)
@@ -497,10 +439,6 @@ DELIMITER ;
 -- TRIGGERS
 -- =====================================================
 
--- Trigger: Tự động cập nhật số lượng tồn kho khi đặt hàng
--- ĐÃ XÓA - Logic này được xử lý trong CartController->checkout()
--- để có thể kiểm soát tốt hơn và tự động chuyển trạng thái out_of_stock
-
 -- Trigger: Tự động tăng view count khi xem sản phẩm
 DELIMITER //
 CREATE TRIGGER update_product_views
@@ -514,7 +452,6 @@ END //
 DELIMITER ;
 
 -- Trigger: Đảm bảo chỉ có 1 ảnh chính cho mỗi sản phẩm
--- Sử dụng AFTER thay vì BEFORE để tránh lỗi "Can't update table in stored function/trigger"
 DELIMITER //
 CREATE TRIGGER after_product_image_insert
 AFTER INSERT ON product_images
@@ -523,8 +460,7 @@ BEGIN
     IF NEW.is_primary = TRUE THEN
         UPDATE product_images 
         SET is_primary = FALSE 
-        WHERE product_id = NEW.product_id 
-        AND id != NEW.id;
+        WHERE product_id = NEW.product_id AND id != NEW.id;
     END IF;
 END //
 DELIMITER ;
@@ -537,12 +473,13 @@ BEGIN
     IF NEW.is_primary = TRUE AND OLD.is_primary = FALSE THEN
         UPDATE product_images 
         SET is_primary = FALSE 
-        WHERE product_id = NEW.product_id 
-        AND id != NEW.id;
+        WHERE product_id = NEW.product_id AND id != NEW.id;
     END IF;
 END //
 DELIMITER ;
 
+-- =====================================================
+-- INDEXES
 -- =====================================================
 
 -- Index cho tìm kiếm sản phẩm
@@ -550,4 +487,3 @@ CREATE FULLTEXT INDEX idx_product_search ON products(name, description);
 
 -- Index cho tìm kiếm bài viết
 CREATE FULLTEXT INDEX idx_post_search ON posts(title, content);
-

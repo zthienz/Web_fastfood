@@ -16,8 +16,13 @@
             <?php if (isLoggedIn()): ?>
                 <a href="index.php?page=favorites" class="favorites-link">Yêu thích</a>
             <?php endif; ?>
-            <a href="index.php?page=cart">Giỏ hàng</a>
-            <a href="#">Liên hệ</a>
+            <a href="index.php?page=cart" class="cart-link">
+                Giỏ hàng
+                <?php if (isLoggedIn() && !empty($_SESSION['cart'])): ?>
+                    <span class="cart-badge"><?= array_sum($_SESSION['cart']) ?></span>
+                <?php endif; ?>
+            </a>
+            <a href="index.php?page=contact">Liên hệ</a>
         </nav>
         <div class="nav-right">
             <?php if (isLoggedIn()): ?>

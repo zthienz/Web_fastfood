@@ -30,6 +30,11 @@
             <span>Quản lý bài viết</span>
         </a>
         
+        <a href="index.php?page=admin&section=contacts" class="nav-item <?= (($_GET['section'] ?? '') === 'contacts' ? 'active' : '') ?>">
+            <span class="nav-icon">📧</span>
+            <span>Quản lý liên hệ</span>
+        </a>
+        
         <a href="index.php?page=admin&section=revenue" class="nav-item <?= (($_GET['section'] ?? '') === 'revenue' ? 'active' : '') ?>">
             <span class="nav-icon">💰</span>
             <span>Tổng doanh thu</span>

@@ -86,8 +86,8 @@ require_once 'views/layouts/header.php';
                         <input type="number" id="quantity" value="1" min="1" max="<?= $product['stock_quantity'] ?>">
                         <button type="button" onclick="increaseQuantity()">+</button>
                     </div>
-                    <a href="javascript:void(0)" onclick="addToCart(<?= $product['id'] ?>)" 
-                       class="btn btn-orange">Thêm vào giỏ</a>
+                    <a href="javascript:void(0)" onclick="addToCartAjax(<?= $product['id'] ?>, document.getElementById('quantity').value, this)" 
+                       class="btn btn-orange add-to-cart-btn">Thêm vào giỏ</a>
                 <?php else: ?>
                     <a href="index.php?page=login" 
                        class="btn btn-orange"
@@ -620,6 +620,155 @@ function addToCart(productId) {
     // Redirect to cart controller with product ID and quantity
     window.location.href = `index.php?page=cart&action=add&id=${productId}&quantity=${quantity}`;
 }
+
+function addToCartAjax(productId, quantity, buttonElement) {
+    // Disable button để tránh click nhiều lần
+    const originalText = buttonElement.textContent;
+    buttonElement.disabled = true;
+    buttonElement.textContent = 'Đang thêm...';
+    buttonElement.style.opacity = '0.7';
+    
+    fetch('index.php?page=cart&action=add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `id=${productId}&quantity=${quantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            
+            // Cập nhật số lượng giỏ hàng trong header nếu có
+            updateCartCount(data.cart_count);
+            
+            // Hiệu ứng thành công cho button
+            buttonElement.style.background = '#4CAF50';
+            buttonElement.textContent = '✓ Đã thêm';
+            
+            setTimeout(() => {
+                buttonElement.style.background = '';
+                buttonElement.textContent = originalText;
+                buttonElement.disabled = false;
+                buttonElement.style.opacity = '1';
+            }, 1500);
+            
+        } else {
+            showNotification(data.message, 'error');
+            
+            // Reset button
+            buttonElement.disabled = false;
+            buttonElement.textContent = originalText;
+            buttonElement.style.opacity = '1';
+            
+            // Nếu cần redirect (như đăng nhập)
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1500);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+        
+        // Reset button
+        buttonElement.disabled = false;
+        buttonElement.textContent = originalText;
+        buttonElement.style.opacity = '1';
+    });
+}
+
+function updateCartCount(count) {
+    // Cập nhật số lượng trong header cart badge
+    const cartBadges = document.querySelectorAll('.cart-badge');
+    cartBadges.forEach(badge => {
+        badge.textContent = count;
+        if (count > 0) {
+            badge.style.display = 'flex';
+            // Thêm animation pulse
+            badge.style.animation = 'pulse 0.3s ease-out';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
+    
+    // Nếu chưa có badge, tạo mới
+    if (cartBadges.length === 0 && count > 0) {
+        const cartLink = document.querySelector('.cart-link');
+        if (cartLink) {
+            const badge = document.createElement('span');
+            badge.className = 'cart-badge';
+            badge.textContent = count;
+            cartLink.appendChild(badge);
+        }
+    }
+}
+
+function showNotification(message, type) {
+    // Tạo notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+        max-width: 350px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        ${type === 'success' ? 'background: #4CAF50;' : 'background: #f44336;'}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Tự động xóa sau 3 giây
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .add-to-cart-btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .add-to-cart-btn:disabled {
+        cursor: not-allowed;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
 </script>
 
 <?php require_once 'views/layouts/footer.php'; ?>

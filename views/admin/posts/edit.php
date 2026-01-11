@@ -32,6 +32,17 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Phân loại bài viết <span class="required">*</span></label>
+                    <select name="category" required class="form-control">
+                        <option value="">-- Chọn phân loại --</option>
+                        <option value="ĐÁNH GIÁ SẢN PHẨM" <?= ($post['category'] ?? '') === 'ĐÁNH GIÁ SẢN PHẨM' ? 'selected' : '' ?>>ĐÁNH GIÁ SẢN PHẨM</option>
+                        <option value="HƯỚNG DẪN" <?= ($post['category'] ?? '') === 'HƯỚNG DẪN' ? 'selected' : '' ?>>HƯỚNG DẪN</option>
+                        <option value="TIN TỨC" <?= ($post['category'] ?? '') === 'TIN TỨC' ? 'selected' : '' ?>>TIN TỨC</option>
+                        <option value="KHUYẾN MÃI" <?= ($post['category'] ?? '') === 'KHUYẾN MÃI' ? 'selected' : '' ?>>KHUYẾN MÃI</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label>Nội dung <span class="required">*</span></label>
                     <textarea name="content" rows="15" required class="form-control"><?= e($post['content']) ?></textarea>
                     <small class="form-hint">Hỗ trợ HTML</small>

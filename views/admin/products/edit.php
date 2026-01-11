@@ -85,11 +85,25 @@
                     <label>Hình ảnh hiện có</label>
                     <div class="image-gallery">
                         <?php foreach ($images as $img): ?>
-                        <div class="image-item">
+                        <div class="image-item" data-image-id="<?= $img['id'] ?>">
                             <img src="<?= asset($img['image_url']) ?>" alt="">
-                            <?php if ($img['is_primary']): ?>
-                            <span class="primary-badge">Ảnh chính</span>
-                            <?php endif; ?>
+                            <div class="image-controls">
+                                <?php if ($img['is_primary']): ?>
+                                <span class="primary-badge">Ảnh chính</span>
+                                <?php else: ?>
+                                <button type="button" class="btn btn-sm btn-primary set-primary-btn" 
+                                        data-image-id="<?= $img['id'] ?>" 
+                                        data-product-id="<?= $product['id'] ?>">
+                                    Đặt làm ảnh chính
+                                </button>
+                                <?php endif; ?>
+                                <button type="button" class="btn btn-sm btn-danger delete-image-btn" 
+                                        data-image-id="<?= $img['id'] ?>" 
+                                        data-product-id="<?= $product['id'] ?>"
+                                        data-is-primary="<?= $img['is_primary'] ? '1' : '0' ?>">
+                                    🗑️ Xóa
+                                </button>
+                            </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -109,5 +123,88 @@
             </form>
         </div>
     </div>
+
+    <script>
+    // Xử lý xóa ảnh
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-image-btn')) {
+            const imageId = e.target.dataset.imageId;
+            const productId = e.target.dataset.productId;
+            const isPrimary = e.target.dataset.isPrimary === '1';
+            
+            if (isPrimary) {
+                if (!confirm('Đây là ảnh chính của sản phẩm. Bạn có chắc chắn muốn xóa?')) {
+                    return;
+                }
+            } else {
+                if (!confirm('Bạn có chắc chắn muốn xóa ảnh này?')) {
+                    return;
+                }
+            }
+            
+            // Gửi request xóa ảnh
+            fetch('index.php?page=admin&section=products&action=delete_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `image_id=${imageId}&product_id=${productId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Xóa element khỏi DOM
+                    e.target.closest('.image-item').remove();
+                    
+                    // Hiển thị thông báo
+                    alert('Xóa ảnh thành công!');
+                    
+                    // Reload trang để cập nhật ảnh chính mới nếu cần
+                    if (isPrimary) {
+                        location.reload();
+                    }
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể xóa ảnh'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xóa ảnh');
+            });
+        }
+        
+        // Xử lý đặt ảnh chính
+        if (e.target.classList.contains('set-primary-btn')) {
+            const imageId = e.target.dataset.imageId;
+            const productId = e.target.dataset.productId;
+            
+            if (!confirm('Đặt ảnh này làm ảnh chính?')) {
+                return;
+            }
+            
+            // Gửi request đặt ảnh chính
+            fetch('index.php?page=admin&section=products&action=set_primary_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `image_id=${imageId}&product_id=${productId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đặt ảnh chính thành công!');
+                    location.reload(); // Reload để cập nhật giao diện
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể đặt ảnh chính'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi đặt ảnh chính');
+            });
+        }
+    });
+    </script>
 </body>
 </html>

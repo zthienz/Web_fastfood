@@ -35,6 +35,10 @@ function getFlash($key) {
     return null;
 }
 
+function hasFlash($key) {
+    return isset($_SESSION["flash_$key"]);
+}
+
 // Validate email
 function isValidEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;

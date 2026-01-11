@@ -187,6 +187,101 @@ class AdminProductController {
         redirect('index.php?page=admin&section=products');
     }
     
+    // Xóa ảnh sản phẩm
+    public function deleteImage() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+        
+        $imageId = $_POST['image_id'] ?? 0;
+        $productId = $_POST['product_id'] ?? 0;
+        
+        try {
+            // Lấy thông tin ảnh
+            $stmt = $this->db->prepare("SELECT * FROM product_images WHERE id = ? AND product_id = ?");
+            $stmt->execute([$imageId, $productId]);
+            $image = $stmt->fetch();
+            
+            if (!$image) {
+                echo json_encode(['success' => false, 'message' => 'Ảnh không tồn tại']);
+                return;
+            }
+            
+            $isPrimary = $image['is_primary'];
+            
+            // Xóa file ảnh
+            if (file_exists($image['image_url'])) {
+                unlink($image['image_url']);
+            }
+            
+            // Xóa record trong database
+            $stmt = $this->db->prepare("DELETE FROM product_images WHERE id = ?");
+            $stmt->execute([$imageId]);
+            
+            // Nếu xóa ảnh chính, tự động đặt ảnh khác làm ảnh chính
+            if ($isPrimary) {
+                $stmt = $this->db->prepare("
+                    SELECT id FROM product_images 
+                    WHERE product_id = ? 
+                    ORDER BY display_order ASC 
+                    LIMIT 1
+                ");
+                $stmt->execute([$productId]);
+                $nextImage = $stmt->fetch();
+                
+                if ($nextImage) {
+                    $stmt = $this->db->prepare("UPDATE product_images SET is_primary = 1 WHERE id = ?");
+                    $stmt->execute([$nextImage['id']]);
+                }
+            }
+            
+            echo json_encode(['success' => true, 'message' => 'Xóa ảnh thành công']);
+            
+        } catch (Exception $e) {
+            error_log("Error deleting image: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa ảnh']);
+        }
+    }
+    
+    // Đặt ảnh chính
+    public function setPrimaryImage() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+        
+        $imageId = $_POST['image_id'] ?? 0;
+        $productId = $_POST['product_id'] ?? 0;
+        
+        try {
+            // Kiểm tra ảnh có tồn tại không
+            $stmt = $this->db->prepare("SELECT id FROM product_images WHERE id = ? AND product_id = ?");
+            $stmt->execute([$imageId, $productId]);
+            
+            if (!$stmt->fetch()) {
+                echo json_encode(['success' => false, 'message' => 'Ảnh không tồn tại']);
+                return;
+            }
+            
+            // Bỏ primary của tất cả ảnh khác
+            $stmt = $this->db->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
+            $stmt->execute([$productId]);
+            
+            // Đặt ảnh được chọn làm primary
+            $stmt = $this->db->prepare("UPDATE product_images SET is_primary = 1 WHERE id = ?");
+            $stmt->execute([$imageId]);
+            
+            echo json_encode(['success' => true, 'message' => 'Đặt ảnh chính thành công']);
+            
+        } catch (Exception $e) {
+            error_log("Error setting primary image: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra khi đặt ảnh chính']);
+        }
+    }
+    
     private function generateSlug($text, $productId = null) {
         $text = strtolower($text);
         $text = preg_replace('/[^a-z0-9\s-]/', '', $text);

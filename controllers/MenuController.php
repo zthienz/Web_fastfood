@@ -10,6 +10,11 @@ class MenuController {
     public function index() {
         $userId = isLoggedIn() ? $_SESSION['user_id'] : null;
         
+        // Debug: Log filter parameters (only in development)
+        if (isset($_GET['debug'])) {
+            error_log("Menu filter parameters: " . print_r($_GET, true));
+        }
+        
         // Kiểm tra xem bảng favorites có tồn tại không
         $favoritesTableExists = false;
         try {
@@ -23,12 +28,38 @@ class MenuController {
         $categoriesStmt = $this->db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order ASC, name ASC");
         $categories = $categoriesStmt->fetchAll();
         
-        // Xử lý các tham số lọc
-        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
-        $minPrice = isset($_GET['min_price']) ? (float)$_GET['min_price'] : null;
-        $maxPrice = isset($_GET['max_price']) ? (float)$_GET['max_price'] : null;
-        $status = isset($_GET['status']) ? sanitize($_GET['status']) : null;
-        $sortBy = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'name';
+        // Xử lý các tham số lọc với validation
+        $categoryId = null;
+        if (isset($_GET['category']) && $_GET['category'] !== '' && $_GET['category'] !== '0') {
+            $categoryId = (int)$_GET['category'];
+        }
+        
+        $minPrice = null;
+        if (isset($_GET['min_price']) && $_GET['min_price'] !== '' && is_numeric($_GET['min_price'])) {
+            $minPrice = (float)$_GET['min_price'];
+            if ($minPrice < 0) $minPrice = null;
+        }
+        
+        $maxPrice = null;
+        if (isset($_GET['max_price']) && $_GET['max_price'] !== '' && is_numeric($_GET['max_price'])) {
+            $maxPrice = (float)$_GET['max_price'];
+            if ($maxPrice < 0) $maxPrice = null;
+        }
+        
+        $status = null;
+        if (isset($_GET['status']) && $_GET['status'] !== '') {
+            $status = sanitize($_GET['status']);
+        }
+        
+        $sortBy = 'name';
+        if (isset($_GET['sort']) && $_GET['sort'] !== '') {
+            $sortBy = sanitize($_GET['sort']);
+        }
+        
+        // Debug: Log processed parameters (only in development)
+        if (isset($_GET['debug'])) {
+            error_log("Processed parameters - Category: $categoryId, MinPrice: $minPrice, MaxPrice: $maxPrice, Status: $status, Sort: $sortBy");
+        }
         
         // Xây dựng câu query với điều kiện lọc
         $sql = "
@@ -59,17 +90,26 @@ class MenuController {
         if ($categoryId) {
             $whereConditions[] = "p.category_id = ?";
             $params[] = $categoryId;
+            if (isset($_GET['debug'])) {
+                error_log("Added category filter: $categoryId");
+            }
         }
         
         // Lọc theo giá
-        if ($minPrice !== null) {
+        if ($minPrice !== null && $minPrice >= 0) {
             $whereConditions[] = "COALESCE(p.sale_price, p.price) >= ?";
             $params[] = $minPrice;
+            if (isset($_GET['debug'])) {
+                error_log("Added min price filter: $minPrice");
+            }
         }
         
-        if ($maxPrice !== null) {
+        if ($maxPrice !== null && $maxPrice >= 0) {
             $whereConditions[] = "COALESCE(p.sale_price, p.price) <= ?";
             $params[] = $maxPrice;
+            if (isset($_GET['debug'])) {
+                error_log("Added max price filter: $maxPrice");
+            }
         }
         
         // Lọc theo trạng thái
@@ -80,6 +120,9 @@ class MenuController {
                 $whereConditions[] = "(p.status = 'out_of_stock' OR p.stock_quantity <= 0)";
             } elseif ($status === 'sale') {
                 $whereConditions[] = "p.sale_price IS NOT NULL AND p.sale_price > 0";
+            }
+            if (isset($_GET['debug'])) {
+                error_log("Added status filter: $status");
             }
         }
         
@@ -103,9 +146,18 @@ class MenuController {
                 $sql .= " ORDER BY p.name ASC";
         }
         
+        if (isset($_GET['debug'])) {
+            error_log("Final SQL: $sql");
+            error_log("Parameters: " . print_r($params, true));
+        }
+        
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $products = $stmt->fetchAll();
+        
+        if (isset($_GET['debug'])) {
+            error_log("Found " . count($products) . " products");
+        }
         
         // Lấy khoảng giá để hiển thị slider
         $priceRangeStmt = $this->db->query("
@@ -143,12 +195,33 @@ class MenuController {
         $categoriesStmt = $this->db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order ASC, name ASC");
         $categories = $categoriesStmt->fetchAll();
         
-        // Xử lý các tham số lọc (giống như index)
-        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
-        $minPrice = isset($_GET['min_price']) ? (float)$_GET['min_price'] : null;
-        $maxPrice = isset($_GET['max_price']) ? (float)$_GET['max_price'] : null;
-        $status = isset($_GET['status']) ? sanitize($_GET['status']) : null;
-        $sortBy = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'name';
+        // Xử lý các tham số lọc (giống như index) với validation
+        $categoryId = null;
+        if (isset($_GET['category']) && $_GET['category'] !== '' && $_GET['category'] !== '0') {
+            $categoryId = (int)$_GET['category'];
+        }
+        
+        $minPrice = null;
+        if (isset($_GET['min_price']) && $_GET['min_price'] !== '' && is_numeric($_GET['min_price'])) {
+            $minPrice = (float)$_GET['min_price'];
+            if ($minPrice < 0) $minPrice = null;
+        }
+        
+        $maxPrice = null;
+        if (isset($_GET['max_price']) && $_GET['max_price'] !== '' && is_numeric($_GET['max_price'])) {
+            $maxPrice = (float)$_GET['max_price'];
+            if ($maxPrice < 0) $maxPrice = null;
+        }
+        
+        $status = null;
+        if (isset($_GET['status']) && $_GET['status'] !== '') {
+            $status = sanitize($_GET['status']);
+        }
+        
+        $sortBy = 'name';
+        if (isset($_GET['sort']) && $_GET['sort'] !== '') {
+            $sortBy = sanitize($_GET['sort']);
+        }
         
         $sql = "
             SELECT p.*, c.name as category_name, pi.image_url as primary_image";

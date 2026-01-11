@@ -18,6 +18,7 @@ require_once 'controllers/ProfileController.php';
 require_once 'controllers/PostController.php';
 require_once 'controllers/FavoritesController.php';
 require_once 'controllers/CommentController.php';
+require_once 'controllers/ContactController.php';
 
 // Admin Controllers
 require_once 'controllers/AdminController.php';
@@ -26,6 +27,7 @@ require_once 'controllers/AdminProductController.php';
 require_once 'controllers/AdminOrderController.php';
 require_once 'controllers/AdminPostController.php';
 require_once 'controllers/AdminRevenueController.php';
+require_once 'controllers/AdminContactController.php';
 
 // Routing
 $page = $_GET['page'] ?? 'home';
@@ -165,6 +167,15 @@ switch ($page) {
         }
         break;
         
+    case 'contact':
+        $controller = new ContactController();
+        if ($action === 'store') {
+            $controller->store();
+        } else {
+            $controller->index();
+        }
+        break;
+        
     // Admin Routes
     case 'admin':
         $section = $_GET['section'] ?? 'dashboard';
@@ -207,6 +218,12 @@ switch ($page) {
                     case 'delete':
                         $controller->delete();
                         break;
+                    case 'delete_image':
+                        $controller->deleteImage();
+                        break;
+                    case 'set_primary_image':
+                        $controller->setPrimaryImage();
+                        break;
                     default:
                         $controller->index();
                 }
@@ -243,6 +260,23 @@ switch ($page) {
                         break;
                     case 'update':
                         $controller->update();
+                        break;
+                    case 'delete':
+                        $controller->delete();
+                        break;
+                    default:
+                        $controller->index();
+                }
+                break;
+                
+            case 'contacts':
+                $controller = new AdminContactController();
+                switch ($action) {
+                    case 'show':
+                        $controller->show();
+                        break;
+                    case 'updateStatus':
+                        $controller->updateStatus();
                         break;
                     case 'delete':
                         $controller->delete();

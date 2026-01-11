@@ -187,8 +187,8 @@ require_once 'views/layouts/header.php';
                     <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
                         <button class="btn btn-disabled" disabled>Hết hàng</button>
                     <?php elseif (isLoggedIn()): ?>
-                        <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
-                           class="btn btn-orange">Thêm vào giỏ</a>
+                        <button onclick="addToCartAjax(<?= $product['id'] ?>, 1, this)" 
+                                class="btn btn-orange add-to-cart-btn">Thêm vào giỏ</button>
                     <?php else: ?>
                         <a href="index.php?page=login" 
                            class="btn btn-orange"
@@ -266,7 +266,7 @@ require_once 'views/layouts/header.php';
 
 .search-btn {
     padding: 15px 25px;
-    background: linear-gradient(135deg, #ff6b35, #ff5722);
+    background: linear-gradient(135deg, #ff5722, #f50057);
     color: white;
     border: none;
     cursor: pointer;
@@ -275,11 +275,27 @@ require_once 'views/layouts/header.php';
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 600;
+    min-width: 120px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .search-btn:hover {
-    background: linear-gradient(135deg, #ff5722, #e64a19);
+    background: linear-gradient(135deg, #f50057, #e91e63);
     transform: translateX(-2px);
+    box-shadow: 0 4px 15px rgba(245, 0, 87, 0.3);
+}
+
+.search-btn i {
+    margin-right: 5px;
+}
+
+.search-btn::after {
+    content: 'TÌM KIẾM';
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 /* Filters Container */
@@ -657,58 +673,93 @@ require_once 'views/layouts/header.php';
 // Auto-submit form when filters change
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
+    
+    // Kiểm tra xem form có tồn tại không
+    if (!filterForm) {
+        console.error('Filter form not found');
+        return;
+    }
+    
     const filterSelects = filterForm.querySelectorAll('.filter-select');
     const searchInput = filterForm.querySelector('.search-input');
+    const priceInputs = filterForm.querySelectorAll('.price-input');
+    const actionInput = filterForm.querySelector('input[name="action"]');
+    
+    // Kiểm tra các elements cần thiết
+    if (!searchInput || !actionInput) {
+        console.error('Required form elements not found');
+        return;
+    }
+    
+    console.log('Filter form initialized successfully');
     
     // Auto-submit when filter selects change
     filterSelects.forEach(select => {
         select.addEventListener('change', function() {
+            console.log('Filter select changed:', this.name, this.value);
+            
             // If search is being used, set action to search
             if (searchInput.value.trim()) {
-                filterForm.querySelector('input[name="action"]').value = 'search';
+                actionInput.value = 'search';
+            } else {
+                actionInput.value = '';
             }
+            
+            // Submit form
             filterForm.submit();
         });
     });
     
-    // Handle search input
+    // Handle search input with debounce
     let searchTimeout;
     searchInput.addEventListener('input', function() {
+        console.log('Search input changed:', this.value);
         clearTimeout(searchTimeout);
+        
         searchTimeout = setTimeout(() => {
             if (this.value.trim()) {
-                filterForm.querySelector('input[name="action"]').value = 'search';
+                actionInput.value = 'search';
+                filterForm.submit();
             } else {
-                filterForm.querySelector('input[name="action"]').value = '';
+                actionInput.value = '';
+                // Optionally submit to clear search results
+                filterForm.submit();
             }
-        }, 300);
+        }, 500); // Increased timeout for better UX
     });
     
-    // Debounce for price inputs
-    const priceInputs = filterForm.querySelectorAll('.price-input');
+    // Handle price inputs with debounce
     let priceTimeout;
-    
     priceInputs.forEach(input => {
         input.addEventListener('input', function() {
+            console.log('Price input changed:', this.name, this.value);
             clearTimeout(priceTimeout);
+            
             priceTimeout = setTimeout(() => {
                 // If search is being used, set action to search
                 if (searchInput.value.trim()) {
-                    filterForm.querySelector('input[name="action"]').value = 'search';
+                    actionInput.value = 'search';
+                } else {
+                    actionInput.value = '';
                 }
+                
                 filterForm.submit();
             }, 1000); // Submit after 1 second of no typing
         });
     });
     
-    // Handle form submission
+    // Handle manual form submission
     filterForm.addEventListener('submit', function(e) {
+        console.log('Form submitted manually');
+        
         const searchValue = searchInput.value.trim();
         if (searchValue) {
-            filterForm.querySelector('input[name="action"]').value = 'search';
+            actionInput.value = 'search';
         } else {
-            filterForm.querySelector('input[name="action"]').value = '';
+            actionInput.value = '';
         }
+        
+        // Let the form submit normally
     });
     
     // Add visual feedback for active filters
@@ -717,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateActiveFilters() {
         // Highlight active filters
         filterSelects.forEach(select => {
-            if (select.value) {
+            if (select.value && select.value !== '') {
                 select.classList.add('active-filter');
             } else {
                 select.classList.remove('active-filter');
@@ -725,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         priceInputs.forEach(input => {
-            if (input.value) {
+            if (input.value && input.value !== '') {
                 input.classList.add('active-filter');
             } else {
                 input.classList.remove('active-filter');
@@ -743,6 +794,14 @@ document.addEventListener('DOMContentLoaded', function() {
     [...filterSelects, ...priceInputs, searchInput].forEach(element => {
         element.addEventListener('change', updateActiveFilters);
         element.addEventListener('input', updateActiveFilters);
+    });
+    
+    // Test filter functionality
+    console.log('Filter elements found:', {
+        filterSelects: filterSelects.length,
+        searchInput: !!searchInput,
+        priceInputs: priceInputs.length,
+        actionInput: !!actionInput
     });
 });
 
@@ -793,6 +852,8 @@ function showNotification(message, type) {
         font-weight: 500;
         z-index: 1000;
         animation: slideIn 0.3s ease-out;
+        max-width: 350px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         ${type === 'success' ? 'background: #4CAF50;' : 'background: #f44336;'}
     `;
     
@@ -802,9 +863,182 @@ function showNotification(message, type) {
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
         }, 300);
     }, 3000);
+}
+
+function addToCartAjax(productId, quantity, buttonElement) {
+    // Disable button để tránh click nhiều lần
+    const originalText = buttonElement.textContent;
+    buttonElement.disabled = true;
+    buttonElement.textContent = 'Đang thêm...';
+    buttonElement.style.opacity = '0.7';
+    
+    fetch('index.php?page=cart&action=add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `id=${productId}&quantity=${quantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            
+            // Cập nhật số lượng giỏ hàng trong header nếu có
+            updateCartCount(data.cart_count);
+            
+            // Hiệu ứng thành công cho button
+            buttonElement.style.background = '#4CAF50';
+            buttonElement.textContent = '✓ Đã thêm';
+            
+            setTimeout(() => {
+                buttonElement.style.background = '';
+                buttonElement.textContent = originalText;
+                buttonElement.disabled = false;
+                buttonElement.style.opacity = '1';
+            }, 1500);
+            
+        } else {
+            showNotification(data.message, 'error');
+            
+            // Reset button
+            buttonElement.disabled = false;
+            buttonElement.textContent = originalText;
+            buttonElement.style.opacity = '1';
+            
+            // Nếu cần redirect (như đăng nhập)
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1500);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Có lỗi xảy ra, vui lòng thử lại!', 'error');
+        
+        // Reset button
+        buttonElement.disabled = false;
+        buttonElement.textContent = originalText;
+        buttonElement.style.opacity = '1';
+    });
+}
+
+function updateCartCount(count) {
+    // Cập nhật số lượng trong header cart badge
+    const cartBadges = document.querySelectorAll('.cart-badge');
+    cartBadges.forEach(badge => {
+        badge.textContent = count;
+        if (count > 0) {
+            badge.style.display = 'flex';
+            // Thêm animation pulse
+            badge.style.animation = 'pulse 0.3s ease-out';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
+    
+    // Nếu chưa có badge, tạo mới
+    if (cartBadges.length === 0 && count > 0) {
+        const cartLink = document.querySelector('.cart-link');
+        if (cartLink) {
+            const badge = document.createElement('span');
+            badge.className = 'cart-badge';
+            badge.textContent = count;
+            cartLink.appendChild(badge);
+        }
+    }
+}
+
+// Test filter functionality when page loads
+window.addEventListener('load', function() {
+    console.log('Page loaded, testing filter functionality...');
+    
+    // Test if form elements exist
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        console.log('✓ Filter form found');
+        
+        const filterSelects = filterForm.querySelectorAll('.filter-select');
+        const searchInput = filterForm.querySelector('.search-input');
+        const priceInputs = filterForm.querySelectorAll('.price-input');
+        
+        console.log('Filter elements:', {
+            selects: filterSelects.length,
+            searchInput: !!searchInput,
+            priceInputs: priceInputs.length
+        });
+        
+        // Test a filter change
+        if (filterSelects.length > 0) {
+            console.log('✓ Filter selects available for testing');
+        }
+    } else {
+        console.error('✗ Filter form not found!');
+    }
+});
+
+function testFilter() {
+    console.log('=== FILTER TEST ===');
+    
+    const filterForm = document.getElementById('filterForm');
+    if (!filterForm) {
+        alert('❌ Filter form not found!');
+        return;
+    }
+    
+    console.log('✓ Filter form found');
+    
+    // Test form elements
+    const filterSelects = filterForm.querySelectorAll('.filter-select');
+    const searchInput = filterForm.querySelector('.search-input');
+    const priceInputs = filterForm.querySelectorAll('.price-input');
+    const actionInput = filterForm.querySelector('input[name="action"]');
+    
+    console.log('Form elements:', {
+        filterSelects: filterSelects.length,
+        searchInput: !!searchInput,
+        priceInputs: priceInputs.length,
+        actionInput: !!actionInput
+    });
+    
+    // Test current values
+    const currentValues = {
+        category: filterForm.querySelector('select[name="category"]')?.value || '',
+        status: filterForm.querySelector('select[name="status"]')?.value || '',
+        sort: filterForm.querySelector('select[name="sort"]')?.value || '',
+        min_price: filterForm.querySelector('input[name="min_price"]')?.value || '',
+        max_price: filterForm.querySelector('input[name="max_price"]')?.value || '',
+        search: searchInput?.value || ''
+    };
+    
+    console.log('Current filter values:', currentValues);
+    
+    // Test form action
+    console.log('Form action:', filterForm.action);
+    console.log('Form method:', filterForm.method);
+    
+    // Test submit
+    const hasActiveFilters = Object.values(currentValues).some(value => value !== '');
+    
+    if (hasActiveFilters) {
+        console.log('✓ Has active filters, testing submit...');
+        
+        // Show confirmation
+        if (confirm('Test filter submit? This will reload the page with current filter values.')) {
+            console.log('Submitting form...');
+            filterForm.submit();
+        }
+    } else {
+        alert('ℹ️ No active filters to test. Try selecting a category or entering a search term first.');
+    }
 }
 
 // CSS animations
@@ -818,6 +1052,34 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .add-to-cart-btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .add-to-cart-btn:disabled {
+        cursor: not-allowed;
+    }
+    
+    .add-to-cart-btn.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 `;
 document.head.appendChild(style);

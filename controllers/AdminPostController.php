@@ -76,6 +76,7 @@ class AdminPostController {
         $slug = $this->generateSlug($title);
         $content = $_POST['content']; // Không sanitize vì có HTML
         $excerpt = sanitize($_POST['excerpt']);
+        $category = sanitize($_POST['category']);
         $status = $_POST['status'];
         $publishedAt = ($status === 'published') ? date('Y-m-d H:i:s') : null;
         
@@ -83,10 +84,10 @@ class AdminPostController {
         $featuredImage = $this->handleImageUpload();
         
         $stmt = $this->db->prepare("
-            INSERT INTO posts (author_id, title, slug, content, excerpt, featured_image, status, published_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO posts (author_id, title, slug, content, excerpt, category, featured_image, status, published_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$_SESSION['user_id'], $title, $slug, $content, $excerpt, $featuredImage, $status, $publishedAt]);
+        $stmt->execute([$_SESSION['user_id'], $title, $slug, $content, $excerpt, $category, $featuredImage, $status, $publishedAt]);
         
         setFlash('success', 'Thêm bài viết thành công!');
         redirect('index.php?page=admin&section=posts');
@@ -118,6 +119,7 @@ class AdminPostController {
         $title = sanitize($_POST['title']);
         $content = $_POST['content'];
         $excerpt = sanitize($_POST['excerpt']);
+        $category = sanitize($_POST['category']);
         $status = $_POST['status'];
         
         // Lấy thông tin bài viết hiện tại
@@ -138,10 +140,10 @@ class AdminPostController {
         
         $stmt = $this->db->prepare("
             UPDATE posts 
-            SET title = ?, content = ?, excerpt = ?, featured_image = ?, status = ?, published_at = ?
+            SET title = ?, content = ?, excerpt = ?, category = ?, featured_image = ?, status = ?, published_at = ?
             WHERE id = ?
         ");
-        $stmt->execute([$title, $content, $excerpt, $featuredImage, $status, $publishedAt, $id]);
+        $stmt->execute([$title, $content, $excerpt, $category, $featuredImage, $status, $publishedAt, $id]);
         
         setFlash('success', 'Cập nhật bài viết thành công!');
         redirect('index.php?page=admin&section=posts&action=edit&id=' . $id);
