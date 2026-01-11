@@ -35,38 +35,44 @@ require_once 'views/layouts/header.php';
                         <?php elseif ($product['stock_quantity'] <= 5): ?>
                             <div class="stock-badge low">Còn <?= $product['stock_quantity'] ?></div>
                         <?php endif; ?>
-                        
-                        <h3><?= e($product['name']) ?></h3>
-                        <p class="category-badge"><?= e($product['category_name'] ?? '') ?></p>
-                        <p class="description"><?= e(substr($product['description'] ?? '', 0, 100)) ?><?= strlen($product['description'] ?? '') > 100 ? '...' : '' ?></p>
-                        
-                        <div class="price-wrapper">
-                            <?php if (!empty($product['sale_price'])): ?>
-                                <span class="original-price"><?= formatMoney($product['price']) ?></span>
-                                <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
-                            <?php else: ?>
-                                <span class="price"><?= formatMoney($product['price']) ?></span>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <p class="favorite-date">Yêu thích từ: <?= date('d/m/Y', strtotime($product['favorited_at'])) ?></p>
                     </a>
                     
-                    <div class="product-actions">
-                        <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
-                            <button class="btn btn-disabled" disabled>Hết hàng</button>
-                        <?php elseif (isLoggedIn()): ?>
-                            <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
-                               class="btn">🛒 Thêm vào giỏ</a>
-                        <?php else: ?>
-                            <a href="index.php?page=login" 
-                               class="btn btn-login"
-                               onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
-                               🛒 Thêm vào giỏ
+                    <div class="content">
+                        <div class="content-body">
+                            <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" class="product-link">
+                                <h3><?= e($product['name']) ?></h3>
                             </a>
-                        <?php endif; ?>
-                        <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" 
-                           class="btn btn-secondary">Xem chi tiết</a>
+                            <p class="category-badge"><?= e($product['category_name'] ?? '') ?></p>
+                            <p class="description"><?= e(substr($product['description'] ?? '', 0, 100)) ?><?= strlen($product['description'] ?? '') > 100 ? '...' : '' ?></p>
+                            
+                            <div class="price-wrapper">
+                                <?php if (!empty($product['sale_price'])): ?>
+                                    <span class="original-price"><?= formatMoney($product['price']) ?></span>
+                                    <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
+                                <?php else: ?>
+                                    <span class="price"><?= formatMoney($product['price']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <p class="favorite-date">Yêu thích từ: <?= date('d/m/Y', strtotime($product['favorited_at'])) ?></p>
+                        </div>
+                        
+                        <div class="product-actions">
+                            <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
+                                <button class="btn btn-disabled" disabled>Hết hàng</button>
+                            <?php elseif (isLoggedIn()): ?>
+                                <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
+                                   class="btn">🛒 Thêm vào giỏ</a>
+                            <?php else: ?>
+                                <a href="index.php?page=login" 
+                                   class="btn btn-login"
+                                   onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
+                                   🛒 Thêm vào giỏ
+                                </a>
+                            <?php endif; ?>
+                            <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" 
+                               class="btn btn-secondary">Xem chi tiết</a>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>

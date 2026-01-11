@@ -157,16 +157,23 @@ require_once 'views/layouts/header.php';
                     <a href="index.php?page=menu&action=detail&id=<?= $relatedProduct['id'] ?>">
                         <img src="<?= getImageUrl($relatedProduct['primary_image'] ?? '') ?>" 
                              alt="<?= e($relatedProduct['name']) ?>">
-                        <h3><?= e($relatedProduct['name']) ?></h3>
-                        <div class="price-wrapper">
-                            <?php if (!empty($relatedProduct['sale_price'])): ?>
-                                <span class="original-price"><?= formatMoney($relatedProduct['price']) ?></span>
-                                <span class="sale-price"><?= formatMoney($relatedProduct['sale_price']) ?></span>
-                            <?php else: ?>
-                                <span class="price"><?= formatMoney($relatedProduct['price']) ?></span>
-                            <?php endif; ?>
-                        </div>
                     </a>
+                    
+                    <div class="content">
+                        <div class="content-body">
+                            <a href="index.php?page=menu&action=detail&id=<?= $relatedProduct['id'] ?>">
+                                <h3><?= e($relatedProduct['name']) ?></h3>
+                            </a>
+                            <div class="price-wrapper">
+                                <?php if (!empty($relatedProduct['sale_price'])): ?>
+                                    <span class="original-price"><?= formatMoney($relatedProduct['price']) ?></span>
+                                    <span class="sale-price"><?= formatMoney($relatedProduct['sale_price']) ?></span>
+                                <?php else: ?>
+                                    <span class="price"><?= formatMoney($relatedProduct['price']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -418,6 +425,7 @@ require_once 'views/layouts/header.php';
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    align-items: stretch; /* Make all grid items same height */
 }
 
 .products-grid .food-item {
@@ -425,6 +433,9 @@ require_once 'views/layouts/header.php';
     border-radius: 12px;
     overflow: hidden;
     transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .products-grid .food-item:hover {
@@ -435,16 +446,23 @@ require_once 'views/layouts/header.php';
 .products-grid .food-item a {
     text-decoration: none;
     color: inherit;
-    display: block;
-    padding: 15px;
 }
 
 .products-grid .food-item img {
     width: 100%;
     height: 180px;
     object-fit: cover;
-    margin-bottom: 10px;
-    border-radius: 8px;
+}
+
+.products-grid .food-item .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.products-grid .food-item .content-body {
+    flex: 1;
 }
 
 .products-grid .food-item h3 {

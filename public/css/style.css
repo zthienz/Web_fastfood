@@ -205,6 +205,7 @@ nav a:hover {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 30px;
+    align-items: stretch; /* Make all grid items same height */
 }
 
 .food-item {
@@ -214,6 +215,9 @@ nav a:hover {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     transition: transform 0.3s, box-shadow 0.3s;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Make all items same height */
 }
 
 .food-item:hover {
@@ -233,6 +237,17 @@ nav a:hover {
     width: 100%;
     height: 200px;
     object-fit: cover;
+}
+
+/* Content wrapper to push button to bottom */
+.food-item .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.food-item .content-body {
+    flex: 1;
 }
 
 /* Stock Badge */
@@ -281,19 +296,14 @@ nav a:hover {
     margin: 0 20px 10px;
 }
 
-.food-item .price {
-    padding: 10px 20px;
-    font-size: 22px;
-    font-weight: bold;
-    color: #ff5722;
-}
 
-/* Price Wrapper for Sale Prices */
+/* Price Wrapper - Unified for all price displays */
 .food-item .price-wrapper {
     padding: 10px 20px;
     display: flex;
     align-items: center;
     gap: 10px;
+    min-height: 50px; /* Fixed height for consistency */
 }
 
 .food-item .original-price {
@@ -308,6 +318,15 @@ nav a:hover {
     color: #ff5722;
 }
 
+/* Single price (no sale) inside price-wrapper */
+.food-item .price-wrapper .price {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ff5722;
+    padding: 0; /* Remove padding since wrapper already has it */
+}
+
+/* Button Styles - Unified positioning */
 .food-item .btn {
     display: block;
     margin: 0 20px 20px;
@@ -319,6 +338,22 @@ nav a:hover {
     border-radius: 8px;
     font-weight: 600;
     transition: background 0.3s;
+    min-height: 48px; /* Fixed height for consistency */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Product actions for favorites page */
+.food-item .product-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0 20px 20px;
+}
+
+.food-item .product-actions .btn {
+    margin: 0;
 }
 
 .food-item .btn:hover {

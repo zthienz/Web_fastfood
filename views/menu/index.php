@@ -172,30 +172,38 @@ require_once 'views/layouts/header.php';
                         <?php elseif ($product['stock_quantity'] <= 5): ?>
                             <div class="stock-badge low">Còn <?= $product['stock_quantity'] ?></div>
                         <?php endif; ?>
-                        <h3><?= e($product['name']) ?></h3>
                     </a>
-                    <p class="category-badge"><?= e($product['category_name'] ?? '') ?></p>
-                    <p><?= e($product['description'] ?? '') ?></p>
-                    <div class="price-wrapper">
-                        <?php if (!empty($product['sale_price'])): ?>
-                            <span class="original-price"><?= formatMoney($product['price']) ?></span>
-                            <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
+                    
+                    <div class="content">
+                        <div class="content-body">
+                            <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" class="product-link">
+                                <h3><?= e($product['name']) ?></h3>
+                            </a>
+                            <p class="category-badge"><?= e($product['category_name'] ?? '') ?></p>
+                            <p><?= e($product['description'] ?? '') ?></p>
+                            <div class="price-wrapper">
+                                <?php if (!empty($product['sale_price'])): ?>
+                                    <span class="original-price"><?= formatMoney($product['price']) ?></span>
+                                    <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
+                                <?php else: ?>
+                                    <span class="price"><?= formatMoney($product['price']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
+                            <button class="btn btn-disabled" disabled>Hết hàng</button>
+                        <?php elseif (isLoggedIn()): ?>
+                            <button onclick="addToCartAjax(<?= $product['id'] ?>, 1, this)" 
+                                    class="btn btn-orange add-to-cart-btn">Thêm vào giỏ</button>
                         <?php else: ?>
-                            <span class="price"><?= formatMoney($product['price']) ?></span>
+                            <a href="index.php?page=login" 
+                               class="btn btn-orange"
+                               onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
+                               Thêm vào giỏ
+                            </a>
                         <?php endif; ?>
                     </div>
-                    <?php if ($product['status'] === 'out_of_stock' || $product['stock_quantity'] <= 0): ?>
-                        <button class="btn btn-disabled" disabled>Hết hàng</button>
-                    <?php elseif (isLoggedIn()): ?>
-                        <button onclick="addToCartAjax(<?= $product['id'] ?>, 1, this)" 
-                                class="btn btn-orange add-to-cart-btn">Thêm vào giỏ</button>
-                    <?php else: ?>
-                        <a href="index.php?page=login" 
-                           class="btn btn-orange"
-                           onclick="return confirm('Bạn cần đăng nhập để thêm món ăn vào giỏ hàng. Bạn có muốn đăng nhập ngay không?')">
-                           Thêm vào giỏ
-                        </a>
-                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>

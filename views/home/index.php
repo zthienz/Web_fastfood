@@ -29,19 +29,27 @@ require_once 'views/layouts/header.php';
                     <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" class="product-link">
                         <img src="<?= getImageUrl($product['primary_image'] ?? $product['image'] ?? '') ?>" 
                              alt="<?= e($product['name']) ?>">
-                        <h3><?= e($product['name']) ?></h3>
                     </a>
-                    <p><?= e($product['description'] ?? '') ?></p>
-                    <div class="price-wrapper">
-                        <?php if (!empty($product['sale_price'])): ?>
-                            <span class="original-price"><?= formatMoney($product['price']) ?></span>
-                            <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
-                        <?php else: ?>
-                            <span class="price"><?= formatMoney($product['price']) ?></span>
-                        <?php endif; ?>
+                    
+                    <div class="content">
+                        <div class="content-body">
+                            <a href="index.php?page=menu&action=detail&id=<?= $product['id'] ?>" class="product-link">
+                                <h3><?= e($product['name']) ?></h3>
+                            </a>
+                            <p><?= e($product['description'] ?? '') ?></p>
+                            <div class="price-wrapper">
+                                <?php if (!empty($product['sale_price'])): ?>
+                                    <span class="original-price"><?= formatMoney($product['price']) ?></span>
+                                    <span class="sale-price"><?= formatMoney($product['sale_price']) ?></span>
+                                <?php else: ?>
+                                    <span class="price"><?= formatMoney($product['price']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
+                           class="btn btn-orange">Đặt ngay</a>
                     </div>
-                    <a href="index.php?page=cart&action=add&id=<?= $product['id'] ?>" 
-                       class="btn btn-orange">Đặt ngay</a>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
