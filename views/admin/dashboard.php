@@ -264,13 +264,24 @@
         // Biểu đồ tình trạng tồn kho
         if (stockStats.length > 0) {
             const ctx2 = document.getElementById('stockStatusChart').getContext('2d');
+            
+            // Map màu theo trạng thái
+            const statusColors = {
+                'in_stock': '#27ae60',    // Xanh lá - Còn hàng
+                'low_stock': '#f39c12',   // Cam - Sắp hết
+                'out_of_stock': '#e74c3c' // Đỏ - Hết hàng
+            };
+            
+            // Lấy màu tương ứng với từng trạng thái
+            const colors = stockStats.map(item => statusColors[item.status] || '#95a5a6');
+            
             new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
                     labels: stockStats.map(item => item.label),
                     datasets: [{
                         data: stockStats.map(item => item.count),
-                        backgroundColor: ['#27ae60', '#f39c12', '#e74c3c'],
+                        backgroundColor: colors,
                         borderWidth: 0,
                         cutout: '60%'
                     }]

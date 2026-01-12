@@ -30,8 +30,8 @@
 
     <!-- Products List -->
     <div class="products-review-list">
-        <?php foreach ($orderItems as $item): ?>
-            <div class="product-review-card <?= $item['already_reviewed'] ? 'already-reviewed' : '' ?>">
+        <?php foreach ($orderItems as $index => $item): ?>
+            <div class="product-review-card <?= $item['already_reviewed'] ? 'already-reviewed' : '' ?>" data-order-item-id="<?= e($item['order_item_id']) ?>">
                 <div class="product-info">
                     <div class="product-image">
                         <?php 
@@ -51,7 +51,7 @@
                         <?php endif; ?>
                     </div>
                     <div class="product-details">
-                        <h3 class="product-name"><?= e($item['current_product_name'] ?: $item['product_name']) ?></h3>
+                        <h3 class="product-name"><?= e($item['product_name']) ?></h3>
                         <div class="product-meta">
                             <span class="product-sku">SKU: <?= e($item['product_id']) ?></span>
                             <span class="product-quantity">Số lượng: <?= e($item['total_quantity']) ?></span>
@@ -67,11 +67,11 @@
 
                 <?php if (!$item['already_reviewed']): ?>
                     <!-- Comment Form -->
-                    <form class="rating-form" data-product-id="<?= e($item['product_id']) ?>">
+                    <form class="rating-form" data-product-id="<?= e($item['product_id']) ?>" data-order-item-id="<?= e($item['order_item_id']) ?>">
                         <div class="comment-section">
                             <label class="comment-label">Nội dung đánh giá:</label>
                             <textarea 
-                                name="content_<?= $item['product_id'] ?>" 
+                                name="content_<?= $item['order_item_id'] ?>" 
                                 class="comment-textarea"
                                 placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
                                 rows="4"
@@ -453,9 +453,10 @@ function submitAllReviews() {
     for (let i = 0; i < forms.length; i++) {
         const form = forms[i];
         const productId = form.dataset.productId;
+        const orderItemId = form.dataset.orderItemId;
         
-        // Tìm textarea
-        let contentTextarea = form.querySelector(`textarea[name="content_${productId}"]`);
+        // Tìm textarea bằng order_item_id để đảm bảo tính duy nhất
+        let contentTextarea = form.querySelector(`textarea[name="content_${orderItemId}"]`);
         
         if (!contentTextarea) {
             // Thử cách khác nếu không tìm thấy
@@ -476,6 +477,7 @@ function submitAllReviews() {
         
         const reviewData = {
             product_id: productId,
+            order_item_id: orderItemId,
             rating: 5, // Mặc định 5 sao
             content: contentTextarea.value.trim()
         };
@@ -520,57 +522,6 @@ function submitAllReviews() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
     });
-}   if (reviews.length === 0) {
-        console.log('No reviews to submit');
-        alert('Tất cả sản phẩm trong đơn hàng này đã được đánh giá!');
-        window.location.href = 'index.php?page=orders';
-        return;
-    }
-    
-    console.log('Final reviews to submit:', reviews);
-    
-    // Disable button and show loading
-    const submitBtn = document.querySelector('.btn-submit');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-    
-    // Submit reviews
-    const formData = new FormData();
-    formData.append('order_id', '<?= e($order['id']) ?>');
-    formData.append('reviews', JSON.stringify(reviews));
-    
-    console.log('Submitting to server:', {
-        order_id: '<?= e($order['id']) ?>',
-        reviews: reviews
-    });
-    
-    fetch('index.php?page=comments&action=submit_order_reviews', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        console.log('Server response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Server response data:', data);
-        if (data.success) {
-            alert('Đánh giá đã được gửi thành công!');
-            window.location.href = 'index.php?page=orders';
-        } else {
-            alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
-        }
-    })
-    .catch(error => {
-        console.error('Fetch error:', error);
-        alert('Có lỗi xảy ra khi gửi đánh giá!');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
-    });
-    
-    console.log('=== End submitAllReviews ===');
 }
 
 // Kiểm tra và ẩn nút submit nếu tất cả sản phẩm đã được đánh giá
@@ -594,10 +545,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Thêm event listeners để clear error highlighting
     forms.forEach(form => {
-        const productId = form.dataset.productId;
+        const orderItemId = form.dataset.orderItemId;
         
         // Clear error khi nhập content
-        const contentTextarea = form.querySelector(`textarea[name="content_${productId}"]`);
+        const contentTextarea = form.querySelector(`textarea[name="content_${orderItemId}"]`);
         if (contentTextarea) {
             contentTextarea.addEventListener('input', function() {
                 this.classList.remove('error-highlight');

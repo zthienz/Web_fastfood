@@ -224,7 +224,7 @@ class AdminController {
                     END as stock_status,
                     COUNT(*) as count
                 FROM products 
-                WHERE status IN ('active', 'inactive')
+                WHERE status IN ('active', 'inactive', 'out_of_stock')
                 GROUP BY 
                     CASE 
                         WHEN stock_quantity > 10 THEN 'in_stock'
@@ -247,13 +247,39 @@ class AdminController {
             ];
             
             $stats = [];
+            $foundStatuses = [];
             foreach ($results as $row) {
                 $stats[] = [
                     'status' => $row['stock_status'],
                     'label' => $statusLabels[$row['stock_status']],
                     'count' => (int)$row['count']
                 ];
+                $foundStatuses[] = $row['stock_status'];
             }
+            
+            // Đảm bảo luôn có đủ 3 trạng thái để hiển thị trên biểu đồ
+            $allStatuses = ['in_stock', 'low_stock', 'out_of_stock'];
+            foreach ($allStatuses as $status) {
+                if (!in_array($status, $foundStatuses)) {
+                    $stats[] = [
+                        'status' => $status,
+                        'label' => $statusLabels[$status],
+                        'count' => 0
+                    ];
+                }
+            }
+            
+            // Sắp xếp lại theo thứ tự: in_stock, low_stock, out_of_stock
+            usort($stats, function($a, $b) {
+                $order = ['in_stock' => 1, 'low_stock' => 2, 'out_of_stock' => 3];
+                return $order[$a['status']] - $order[$b['status']];
+            });
+            
+            // Lọc bỏ các trạng thái có count = 0 để biểu đồ không hiển thị phần rỗng
+            $stats = array_filter($stats, function($item) {
+                return $item['count'] > 0;
+            });
+            $stats = array_values($stats); // Reset keys
             
             // Đảm bảo có ít nhất một số dữ liệu để hiển thị
             if (empty($stats)) {

@@ -101,19 +101,6 @@ require_once 'views/layouts/header.php';
                                         <div class="payment-check"><i class="fas fa-check-circle"></i></div>
                                     </div>
                                 </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="payment_method" value="momo">
-                                    <div class="payment-box">
-                                        <div class="payment-icon momo">
-                                            <i class="fas fa-mobile-alt"></i>
-                                        </div>
-                                        <div class="payment-info">
-                                            <span class="payment-name">Ví MoMo</span>
-                                            <span class="payment-desc">Thanh toán qua ví điện tử MoMo</span>
-                                        </div>
-                                        <div class="payment-check"><i class="fas fa-check-circle"></i></div>
-                                    </div>
-                                </label>
                             </div>
                             
                             <!-- Bank info (hidden by default) -->

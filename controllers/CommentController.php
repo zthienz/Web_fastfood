@@ -34,46 +34,53 @@ class CommentController {
         }
         
         // Lấy danh sách sản phẩm trong đơn hàng 
-        // FIX: Đã sửa lỗi hiển thị sai sản phẩm trong form đánh giá
-        // - Loại bỏ GROUP BY để tránh lỗi SQL với DISTINCT
-        // - Đảm bảo mỗi sản phẩm trong đơn hàng được hiển thị chính xác
+        // FIX: Ưu tiên lấy thông tin từ order_items (đã lưu tại thời điểm đặt hàng)
+        // Chỉ dùng products để lấy ảnh hiện tại nếu cần
         $stmt = $this->db->prepare("
             SELECT 
+                oi.id as order_item_id,
                 oi.product_id,
                 oi.product_name,
                 oi.product_image,
                 oi.price,
-                oi.quantity as total_quantity,
-                p.name as current_product_name, 
-                pi.image_url as current_product_image
+                oi.quantity as total_quantity
             FROM order_items oi
-            LEFT JOIN products p ON oi.product_id = p.id
-            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
             WHERE oi.order_id = ?
-            ORDER BY oi.product_id
+            ORDER BY oi.id ASC
         ");
         $stmt->execute([$orderId]);
         $orderItems = $stmt->fetchAll();
         
-        if (empty($orderItems)) {
-            setFlash('error', 'Không tìm thấy sản phẩm trong đơn hàng!');
-            redirect('index.php?page=orders');
-        }
-        
-        // Kiểm tra sản phẩm nào đã được đánh giá
+        // Lấy ảnh hiện tại và kiểm tra đánh giá cho mỗi sản phẩm
         $allReviewed = true;
-        foreach ($orderItems as &$item) {
+        for ($i = 0; $i < count($orderItems); $i++) {
+            // Lấy ảnh hiện tại
+            $stmt = $this->db->prepare("
+                SELECT pi.image_url 
+                FROM product_images pi 
+                WHERE pi.product_id = ? AND pi.is_primary = 1 
+                LIMIT 1
+            ");
+            $stmt->execute([$orderItems[$i]['product_id']]);
+            $imageResult = $stmt->fetch();
+            $orderItems[$i]['current_product_image'] = $imageResult ? $imageResult['image_url'] : null;
+            
+            // Kiểm tra đã đánh giá chưa
             $stmt = $this->db->prepare("
                 SELECT id FROM comments 
                 WHERE user_id = ? AND order_id = ? AND product_id = ?
             ");
-            $stmt->execute([$_SESSION['user_id'], $orderId, $item['product_id']]);
-            $item['already_reviewed'] = $stmt->fetch() ? true : false;
+            $stmt->execute([$_SESSION['user_id'], $orderId, $orderItems[$i]['product_id']]);
+            $orderItems[$i]['already_reviewed'] = $stmt->fetch() ? true : false;
             
-            // Nếu có ít nhất 1 sản phẩm chưa được đánh giá
-            if (!$item['already_reviewed']) {
+            if (!$orderItems[$i]['already_reviewed']) {
                 $allReviewed = false;
             }
+        }
+        
+        if (empty($orderItems)) {
+            setFlash('error', 'Không tìm thấy sản phẩm trong đơn hàng!');
+            redirect('index.php?page=orders');
         }
         
         // Nếu tất cả sản phẩm đã được đánh giá, chuyển hướng với thông báo
