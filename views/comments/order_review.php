@@ -54,7 +54,7 @@
                         <h3 class="product-name"><?= e($item['current_product_name'] ?: $item['product_name']) ?></h3>
                         <div class="product-meta">
                             <span class="product-sku">SKU: <?= e($item['product_id']) ?></span>
-                            <span class="product-quantity">Số lượng: <?= e($item['quantity']) ?></span>
+                            <span class="product-quantity">Số lượng: <?= e($item['total_quantity']) ?></span>
                         </div>
                         <?php if ($item['already_reviewed']): ?>
                             <div class="reviewed-badge">
@@ -520,6 +520,57 @@ function submitAllReviews() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
     });
+}   if (reviews.length === 0) {
+        console.log('No reviews to submit');
+        alert('Tất cả sản phẩm trong đơn hàng này đã được đánh giá!');
+        window.location.href = 'index.php?page=orders';
+        return;
+    }
+    
+    console.log('Final reviews to submit:', reviews);
+    
+    // Disable button and show loading
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    
+    // Submit reviews
+    const formData = new FormData();
+    formData.append('order_id', '<?= e($order['id']) ?>');
+    formData.append('reviews', JSON.stringify(reviews));
+    
+    console.log('Submitting to server:', {
+        order_id: '<?= e($order['id']) ?>',
+        reviews: reviews
+    });
+    
+    fetch('index.php?page=comments&action=submit_order_reviews', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Server response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Server response data:', data);
+        if (data.success) {
+            alert('Đánh giá đã được gửi thành công!');
+            window.location.href = 'index.php?page=orders';
+        } else {
+            alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Có lỗi xảy ra khi gửi đánh giá!');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
+    });
+    
+    console.log('=== End submitAllReviews ===');
 }
 
 // Kiểm tra và ẩn nút submit nếu tất cả sản phẩm đã được đánh giá

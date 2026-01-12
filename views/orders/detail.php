@@ -140,7 +140,7 @@
                                 <h4 class="product-name"><?= e($item['current_product_name'] ?: $item['product_name']) ?></h4>
                                 <div class="product-details">
                                     <span class="product-sku">SKU: <?= e($item['product_id']) ?></span>
-                                    <span class="product-quantity">Số lượng: x<?= e($item['quantity']) ?></span>
+                                    <span class="product-quantity">Số lượng: x<?= e($item['total_quantity']) ?></span>
                                 </div>
                                 
                                 <?php if ($item['comment_id'] && $order['order_status'] === 'delivered'): ?>

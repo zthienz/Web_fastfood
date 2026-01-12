@@ -13,7 +13,12 @@ class CommentController {
             redirect('index.php?page=login');
         }
         
-        $orderId = $_GET['order_id'] ?? 0;
+        $orderId = intval($_GET['order_id'] ?? 0);
+        
+        if ($orderId <= 0) {
+            setFlash('error', 'ID đơn hàng không hợp lệ!');
+            redirect('index.php?page=orders');
+        }
         
         // Lấy thông tin đơn hàng
         $stmt = $this->db->prepare("
@@ -28,16 +33,32 @@ class CommentController {
             redirect('index.php?page=orders');
         }
         
-        // Lấy danh sách sản phẩm trong đơn hàng
+        // Lấy danh sách sản phẩm trong đơn hàng 
+        // FIX: Đã sửa lỗi hiển thị sai sản phẩm trong form đánh giá
+        // - Loại bỏ GROUP BY để tránh lỗi SQL với DISTINCT
+        // - Đảm bảo mỗi sản phẩm trong đơn hàng được hiển thị chính xác
         $stmt = $this->db->prepare("
-            SELECT oi.*, p.name as current_product_name, pi.image_url as current_product_image
+            SELECT 
+                oi.product_id,
+                oi.product_name,
+                oi.product_image,
+                oi.price,
+                oi.quantity as total_quantity,
+                p.name as current_product_name, 
+                pi.image_url as current_product_image
             FROM order_items oi
             LEFT JOIN products p ON oi.product_id = p.id
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
             WHERE oi.order_id = ?
+            ORDER BY oi.product_id
         ");
         $stmt->execute([$orderId]);
         $orderItems = $stmt->fetchAll();
+        
+        if (empty($orderItems)) {
+            setFlash('error', 'Không tìm thấy sản phẩm trong đơn hàng!');
+            redirect('index.php?page=orders');
+        }
         
         // Kiểm tra sản phẩm nào đã được đánh giá
         $allReviewed = true;

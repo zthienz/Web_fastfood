@@ -47,16 +47,30 @@ class OrderController {
             redirect('index.php?page=orders');
         }
         
-        // Lấy chi tiết sản phẩm trong đơn
+        // Lấy chi tiết sản phẩm trong đơn (nhóm theo product_id để tránh trùng lặp)
         $stmt = $this->db->prepare("
-            SELECT oi.*, p.id as current_product_id, p.name as current_product_name,
-                   c.id as comment_id, c.rating, c.content as comment_content, c.created_at as comment_date,
-                   pi.image_url as current_product_image
+            SELECT 
+                oi.product_id,
+                MAX(oi.product_name) as product_name,
+                MAX(oi.product_image) as product_image,
+                MAX(oi.price) as price,
+                MAX(oi.price) as unit_price,
+                SUM(oi.quantity) as total_quantity,
+                (MAX(oi.price) * SUM(oi.quantity)) as subtotal,
+                MAX(p.id) as current_product_id, 
+                MAX(p.name) as current_product_name,
+                MAX(c.id) as comment_id, 
+                MAX(c.rating) as rating, 
+                MAX(c.content) as comment_content, 
+                MAX(c.created_at) as comment_date,
+                MAX(pi.image_url) as current_product_image
             FROM order_items oi
             LEFT JOIN products p ON oi.product_id = p.id
             LEFT JOIN comments c ON c.order_id = oi.order_id AND c.product_id = oi.product_id AND c.user_id = ?
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
             WHERE oi.order_id = ?
+            GROUP BY oi.product_id
+            ORDER BY oi.product_id
         ");
         $stmt->execute([$_SESSION['user_id'], $orderId]);
         $orderItems = $stmt->fetchAll();
