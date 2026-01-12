@@ -190,8 +190,29 @@
             <i class="fas fa-arrow-left"></i>
             Quay lại danh sách đơn hàng
         </a>
+        
+        <?php if ($order['order_status'] === 'pending'): ?>
+            <button type="button" class="btn-cancel-detail" onclick="cancelOrder(<?= $order['id'] ?>, '<?= e($order['order_number']) ?>')">
+                <i class="fas fa-times"></i>
+                Hủy đơn hàng
+            </button>
+        <?php endif; ?>
     </div>
 </div>
+
+<!-- Form ẩn để hủy đơn hàng -->
+<form id="cancelOrderForm" method="POST" action="index.php?page=orders&action=cancel" style="display: none;">
+    <input type="hidden" name="order_id" id="cancelOrderId">
+</form>
+
+<script>
+function cancelOrder(orderId, orderNumber) {
+    if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng ${orderNumber}?\n\nSau khi hủy, số lượng sản phẩm sẽ được hoàn lại vào kho và bạn không thể khôi phục đơn hàng này.`)) {
+        document.getElementById('cancelOrderId').value = orderId;
+        document.getElementById('cancelOrderForm').submit();
+    }
+}
+</script>
 
 <style>
 /* Order Detail Page Styles - Inspired by the provided image */
@@ -638,6 +659,7 @@
     gap: 8px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    margin-right: 15px;
 }
 
 .btn-back:hover {
@@ -648,10 +670,37 @@
     box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
+.btn-cancel-detail {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+    font-size: 14px;
+}
+
+.btn-cancel-detail:hover {
+    background: linear-gradient(135deg, #d32f2f, #c62828);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
+
 /* Back Section */
 .back-section {
     text-align: center;
     margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 /* Responsive Design */
@@ -720,6 +769,17 @@
     
     .total-amount {
         font-size: 20px;
+    }
+    
+    .back-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-back, .btn-cancel-detail {
+        width: 100%;
+        justify-content: center;
+        margin-right: 0;
     }
 }
 </style>

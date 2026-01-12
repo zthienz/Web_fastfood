@@ -19,6 +19,8 @@ require_once 'controllers/PostController.php';
 require_once 'controllers/FavoritesController.php';
 require_once 'controllers/CommentController.php';
 require_once 'controllers/ContactController.php';
+require_once 'controllers/PolicyController.php';
+require_once 'controllers/AboutController.php';
 
 // Admin Controllers
 require_once 'controllers/AdminController.php';
@@ -162,6 +164,8 @@ switch ($page) {
         $controller = new OrderController();
         if ($action === 'detail') {
             $controller->detail();
+        } elseif ($action === 'cancel') {
+            $controller->cancel();
         } else {
             $controller->index();
         }
@@ -174,6 +178,16 @@ switch ($page) {
         } else {
             $controller->index();
         }
+        break;
+        
+    case 'policy':
+        $controller = new PolicyController();
+        $controller->index();
+        break;
+        
+    case 'about':
+        $controller = new AboutController();
+        $controller->index();
         break;
         
     // Admin Routes

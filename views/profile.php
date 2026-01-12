@@ -16,14 +16,32 @@ require_once 'views/layouts/header.php';
         <div class="profile-card">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <div class="avatar-circle">
-                        <?= strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)) ?>
+                    <?php if (!empty($user['avatar']) && file_exists('public/images/avatars/' . $user['avatar'])): ?>
+                        <img src="public/images/avatars/<?= e($user['avatar']) ?>?v=<?= time() ?>" alt="Avatar" class="avatar-image" id="avatarPreview">
+                    <?php else: ?>
+                        <div class="avatar-circle" id="avatarCircle">
+                            <?= strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)) ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="avatar-upload">
+                        <label for="avatarInput" class="avatar-upload-btn">
+                            <i class="fas fa-camera"></i>
+                            Thay đổi ảnh
+                        </label>
                     </div>
                 </div>
                 <h3>Chỉnh sửa thông tin</h3>
             </div>
             
-            <form method="POST" action="index.php?page=profile&action=update" class="profile-form">
+            <form method="POST" action="index.php?page=profile&action=update" class="profile-form" enctype="multipart/form-data">
+                <!-- Hidden file input - PHẢI nằm trong form -->
+                <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
+                
+                <!-- Debug info - sẽ xóa sau -->
+                <div id="debugInfo" style="display: none; background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                    <small>Debug: File selected = <span id="fileSelected">None</span></small>
+                </div>
+                
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Họ và tên <span class="required">*</span></label>
                     <input type="text" name="full_name" class="form-input" 
@@ -70,9 +88,13 @@ require_once 'views/layouts/header.php';
         <!-- Hiển thị thông tin -->
         <div class="profile-card">
             <div class="profile-avatar">
-                <div class="avatar-circle">
-                    <?= strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)) ?>
-                </div>
+                <?php if (!empty($user['avatar']) && file_exists('public/images/avatars/' . $user['avatar'])): ?>
+                    <img src="public/images/avatars/<?= e($user['avatar']) ?>?v=<?= time() ?>" alt="Avatar" class="avatar-image">
+                <?php else: ?>
+                    <div class="avatar-circle">
+                        <?= strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)) ?>
+                    </div>
+                <?php endif; ?>
             </div>
             
             <div class="profile-info">
@@ -193,6 +215,39 @@ require_once 'views/layouts/header.php';
     justify-content: center;
     font-size: 48px;
     font-weight: 700;
+}
+
+.avatar-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.avatar-upload {
+    margin-top: 15px;
+}
+
+.avatar-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.avatar-upload-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
 }
 
 .profile-info {
@@ -421,6 +476,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 alert('Số điện thoại không hợp lệ! Vui lòng nhập 10-11 chữ số.');
                 return false;
+            }
+        });
+    }
+    
+    // Xử lý preview avatar
+    const avatarInput = document.getElementById('avatarInput');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const debugInfo = document.getElementById('debugInfo');
+            const fileSelected = document.getElementById('fileSelected');
+            
+            if (file) {
+                // Debug info
+                if (debugInfo && fileSelected) {
+                    fileSelected.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + 'KB)';
+                    debugInfo.style.display = 'block';
+                }
+                
+                // Kiểm tra kích thước file (max 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Kích thước ảnh không được vượt quá 2MB!');
+                    this.value = '';
+                    if (debugInfo) debugInfo.style.display = 'none';
+                    return;
+                }
+                
+                // Kiểm tra định dạng file
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Chỉ chấp nhận file ảnh định dạng JPG, PNG, GIF!');
+                    this.value = '';
+                    if (debugInfo) debugInfo.style.display = 'none';
+                    return;
+                }
+                
+                // Preview ảnh
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatarCircle = document.getElementById('avatarCircle');
+                    const avatarPreview = document.getElementById('avatarPreview');
+                    
+                    if (avatarPreview) {
+                        avatarPreview.src = e.target.result;
+                    } else if (avatarCircle) {
+                        // Tạo img element mới thay thế avatar circle
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Avatar Preview';
+                        img.className = 'avatar-image';
+                        img.id = 'avatarPreview';
+                        avatarCircle.parentNode.replaceChild(img, avatarCircle);
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                if (debugInfo) debugInfo.style.display = 'none';
             }
         });
     }

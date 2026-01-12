@@ -66,4 +66,69 @@ class OrderController {
         
         require_once 'views/orders/detail.php';
     }
+    
+    public function cancel() {
+        if (!isLoggedIn()) {
+            redirect('index.php?page=login');
+        }
+        
+        $orderId = $_POST['order_id'] ?? 0;
+        
+        try {
+            $this->db->beginTransaction();
+            
+            // Kiểm tra đơn hàng có thuộc về user và có thể hủy không
+            $stmt = $this->db->prepare("
+                SELECT * FROM orders 
+                WHERE id = ? AND user_id = ? AND order_status = 'pending'
+            ");
+            $stmt->execute([$orderId, $_SESSION['user_id']]);
+            $order = $stmt->fetch();
+            
+            if (!$order) {
+                throw new Exception('Không thể hủy đơn hàng này!');
+            }
+            
+            // Lấy danh sách sản phẩm trong đơn hàng để hoàn lại tồn kho
+            $stmt = $this->db->prepare("
+                SELECT product_id, quantity 
+                FROM order_items 
+                WHERE order_id = ?
+            ");
+            $stmt->execute([$orderId]);
+            $orderItems = $stmt->fetchAll();
+            
+            // Hoàn lại số lượng tồn kho cho từng sản phẩm
+            foreach ($orderItems as $item) {
+                $stmt = $this->db->prepare("
+                    UPDATE products 
+                    SET stock_quantity = stock_quantity + ? 
+                    WHERE id = ?
+                ");
+                $stmt->execute([$item['quantity'], $item['product_id']]);
+                
+                // Cập nhật trạng thái sản phẩm nếu cần
+                updateProductStatus($item['product_id']);
+            }
+            
+            // Cập nhật trạng thái đơn hàng thành 'cancelled'
+            $stmt = $this->db->prepare("
+                UPDATE orders 
+                SET order_status = 'cancelled', 
+                    updated_at = NOW() 
+                WHERE id = ?
+            ");
+            $stmt->execute([$orderId]);
+            
+            $this->db->commit();
+            
+            setFlash('success', 'Đơn hàng đã được hủy thành công!');
+            
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            setFlash('error', $e->getMessage());
+        }
+        
+        redirect('index.php?page=orders');
+    }
 }
