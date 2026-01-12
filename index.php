@@ -155,6 +155,9 @@ switch ($page) {
             case 'submit_order_reviews':
                 $controller->submitOrderReviews();
                 break;
+            case 'admin_reply':
+                $controller->adminReply();
+                break;
             default:
                 redirect('index.php');
         }

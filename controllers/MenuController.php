@@ -10,11 +10,6 @@ class MenuController {
     public function index() {
         $userId = isLoggedIn() ? $_SESSION['user_id'] : null;
         
-        // Debug: Log filter parameters (only in development)
-        if (isset($_GET['debug'])) {
-            error_log("Menu filter parameters: " . print_r($_GET, true));
-        }
-        
         // Kiểm tra xem bảng favorites có tồn tại không
         $favoritesTableExists = false;
         try {
@@ -146,18 +141,9 @@ class MenuController {
                 $sql .= " ORDER BY p.name ASC";
         }
         
-        if (isset($_GET['debug'])) {
-            error_log("Final SQL: $sql");
-            error_log("Parameters: " . print_r($params, true));
-        }
-        
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $products = $stmt->fetchAll();
-        
-        if (isset($_GET['debug'])) {
-            error_log("Found " . count($products) . " products");
-        }
         
         // Lấy khoảng giá để hiển thị slider
         $priceRangeStmt = $this->db->query("

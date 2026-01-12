@@ -262,31 +262,104 @@ class CommentController {
         }
     }
     
-    // Lấy bình luận của sản phẩm
+    // Lấy bình luận của sản phẩm với replies
     public function getProductComments($productId, $limit = 10, $offset = 0) {
+        // Lấy comments chính
         $stmt = $this->db->prepare("
             SELECT c.*, u.full_name, u.avatar, o.order_number
             FROM comments c
             JOIN users u ON c.user_id = u.id
             LEFT JOIN orders o ON c.order_id = o.id
-            WHERE c.product_id = ? AND c.status = 'approved'
+            WHERE c.product_id = ? AND c.status = 'approved' AND c.parent_id IS NULL
             ORDER BY c.created_at DESC
             LIMIT ? OFFSET ?
         ");
         $stmt->execute([$productId, $limit, $offset]);
-        return $stmt->fetchAll();
+        $comments = $stmt->fetchAll();
+        
+        // Lấy replies cho mỗi comment
+        foreach ($comments as &$comment) {
+            $stmt = $this->db->prepare("
+                SELECT c.*, u.full_name, u.avatar
+                FROM comments c
+                JOIN users u ON c.user_id = u.id
+                WHERE c.parent_id = ? AND c.status = 'approved'
+                ORDER BY c.created_at ASC
+            ");
+            $stmt->execute([$comment['id']]);
+            $comment['replies'] = $stmt->fetchAll();
+        }
+        
+        return $comments;
     }
     
-    // Đếm tổng số bình luận của sản phẩm
+    // Đếm tổng số bình luận của sản phẩm (chỉ comments chính)
     public function countProductComments($productId) {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) as total
             FROM comments 
-            WHERE product_id = ? AND status = 'approved'
+            WHERE product_id = ? AND status = 'approved' AND parent_id IS NULL
         ");
         $stmt->execute([$productId]);
         $result = $stmt->fetch();
         return $result['total'] ?? 0;
+    }
+    
+    // Xử lý phản hồi admin
+    public function adminReply() {
+        if (!isLoggedIn() || $_SESSION['role'] !== 'admin') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Không có quyền truy cập']);
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Phương thức không hợp lệ']);
+            exit;
+        }
+        
+        $commentId = $_POST['comment_id'] ?? 0;
+        $content = sanitize($_POST['content'] ?? '');
+        
+        try {
+            // Validate
+            if (empty($content)) {
+                throw new Exception('Vui lòng nhập nội dung phản hồi');
+            }
+            
+            // Kiểm tra comment gốc có tồn tại không
+            $stmt = $this->db->prepare("
+                SELECT id, product_id FROM comments 
+                WHERE id = ? AND status = 'approved'
+            ");
+            $stmt->execute([$commentId]);
+            $originalComment = $stmt->fetch();
+            
+            if (!$originalComment) {
+                throw new Exception('Không tìm thấy bình luận gốc');
+            }
+            
+            // Thêm phản hồi
+            $stmt = $this->db->prepare("
+                INSERT INTO comments (user_id, product_id, parent_id, content, status, created_at)
+                VALUES (?, ?, ?, ?, 'approved', NOW())
+            ");
+            $stmt->execute([
+                $_SESSION['user_id'], 
+                $originalComment['product_id'], 
+                $commentId, 
+                $content
+            ]);
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Phản hồi đã được gửi thành công']);
+            
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
     }
     
     // Tính điểm đánh giá trung bình

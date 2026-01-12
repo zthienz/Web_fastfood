@@ -699,13 +699,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    console.log('Filter form initialized successfully');
-    
     // Auto-submit when filter selects change
     filterSelects.forEach(select => {
         select.addEventListener('change', function() {
-            console.log('Filter select changed:', this.name, this.value);
-            
             // If search is being used, set action to search
             if (searchInput.value.trim()) {
                 actionInput.value = 'search';
@@ -721,7 +717,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle search input with debounce
     let searchTimeout;
     searchInput.addEventListener('input', function() {
-        console.log('Search input changed:', this.value);
         clearTimeout(searchTimeout);
         
         searchTimeout = setTimeout(() => {
@@ -740,7 +735,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let priceTimeout;
     priceInputs.forEach(input => {
         input.addEventListener('input', function() {
-            console.log('Price input changed:', this.name, this.value);
             clearTimeout(priceTimeout);
             
             priceTimeout = setTimeout(() => {
@@ -758,8 +752,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle manual form submission
     filterForm.addEventListener('submit', function(e) {
-        console.log('Form submitted manually');
-        
         const searchValue = searchInput.value.trim();
         if (searchValue) {
             actionInput.value = 'search';
@@ -802,14 +794,6 @@ document.addEventListener('DOMContentLoaded', function() {
     [...filterSelects, ...priceInputs, searchInput].forEach(element => {
         element.addEventListener('change', updateActiveFilters);
         element.addEventListener('input', updateActiveFilters);
-    });
-    
-    // Test filter functionality
-    console.log('Filter elements found:', {
-        filterSelects: filterSelects.length,
-        searchInput: !!searchInput,
-        priceInputs: priceInputs.length,
-        actionInput: !!actionInput
     });
 });
 
@@ -962,90 +946,6 @@ function updateCartCount(count) {
             badge.textContent = count;
             cartLink.appendChild(badge);
         }
-    }
-}
-
-// Test filter functionality when page loads
-window.addEventListener('load', function() {
-    console.log('Page loaded, testing filter functionality...');
-    
-    // Test if form elements exist
-    const filterForm = document.getElementById('filterForm');
-    if (filterForm) {
-        console.log('✓ Filter form found');
-        
-        const filterSelects = filterForm.querySelectorAll('.filter-select');
-        const searchInput = filterForm.querySelector('.search-input');
-        const priceInputs = filterForm.querySelectorAll('.price-input');
-        
-        console.log('Filter elements:', {
-            selects: filterSelects.length,
-            searchInput: !!searchInput,
-            priceInputs: priceInputs.length
-        });
-        
-        // Test a filter change
-        if (filterSelects.length > 0) {
-            console.log('✓ Filter selects available for testing');
-        }
-    } else {
-        console.error('✗ Filter form not found!');
-    }
-});
-
-function testFilter() {
-    console.log('=== FILTER TEST ===');
-    
-    const filterForm = document.getElementById('filterForm');
-    if (!filterForm) {
-        alert('❌ Filter form not found!');
-        return;
-    }
-    
-    console.log('✓ Filter form found');
-    
-    // Test form elements
-    const filterSelects = filterForm.querySelectorAll('.filter-select');
-    const searchInput = filterForm.querySelector('.search-input');
-    const priceInputs = filterForm.querySelectorAll('.price-input');
-    const actionInput = filterForm.querySelector('input[name="action"]');
-    
-    console.log('Form elements:', {
-        filterSelects: filterSelects.length,
-        searchInput: !!searchInput,
-        priceInputs: priceInputs.length,
-        actionInput: !!actionInput
-    });
-    
-    // Test current values
-    const currentValues = {
-        category: filterForm.querySelector('select[name="category"]')?.value || '',
-        status: filterForm.querySelector('select[name="status"]')?.value || '',
-        sort: filterForm.querySelector('select[name="sort"]')?.value || '',
-        min_price: filterForm.querySelector('input[name="min_price"]')?.value || '',
-        max_price: filterForm.querySelector('input[name="max_price"]')?.value || '',
-        search: searchInput?.value || ''
-    };
-    
-    console.log('Current filter values:', currentValues);
-    
-    // Test form action
-    console.log('Form action:', filterForm.action);
-    console.log('Form method:', filterForm.method);
-    
-    // Test submit
-    const hasActiveFilters = Object.values(currentValues).some(value => value !== '');
-    
-    if (hasActiveFilters) {
-        console.log('✓ Has active filters, testing submit...');
-        
-        // Show confirmation
-        if (confirm('Test filter submit? This will reload the page with current filter values.')) {
-            console.log('Submitting form...');
-            filterForm.submit();
-        }
-    } else {
-        alert('ℹ️ No active filters to test. Try selecting a category or entering a search term first.');
     }
 }
 

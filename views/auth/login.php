@@ -67,6 +67,18 @@
 
         <script>
         function handleCredentialResponse(response) {
+            if (!response.credential) {
+                alert('Lỗi: Không nhận được credential từ Google');
+                return;
+            }
+            
+            // Hiển thị loading
+            const button = document.querySelector('.g_id_signin');
+            if (button) {
+                button.style.opacity = '0.5';
+                button.style.pointerEvents = 'none';
+            }
+            
             // Gửi credential đến server
             const form = document.createElement('form');
             form.method = 'POST';
@@ -81,6 +93,17 @@
             document.body.appendChild(form);
             form.submit();
         }
+        
+        // Xử lý lỗi Google Sign-In
+        window.addEventListener('load', function() {
+            // Kiểm tra xem Google Sign-In có load được không
+            setTimeout(function() {
+                const googleButton = document.querySelector('.g_id_signin');
+                if (googleButton && !googleButton.innerHTML.trim()) {
+                    // Google Sign-In không load được - có thể log lỗi nếu cần
+                }
+            }, 3000);
+        });
         </script>
 
         <!-- Fallback button nếu Google Sign-In không load -->

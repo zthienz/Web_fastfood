@@ -4,8 +4,8 @@
 define('SITE_NAME', 'FastFood');
 define('BASE_URL', 'http://localhost/Web_fastfood/');
 
-// Debug mode - bật để hiển thị lỗi chi tiết
-define('DEBUG', true);
+// Debug mode - tắt trong production
+define('DEBUG', false);
 
 // Cấu hình Google OAuth
 define('GOOGLE_CLIENT_ID', '297138230092-rlmkuhkj2ih6v0r6t2er386k0dj1n7tb.apps.googleusercontent.com');

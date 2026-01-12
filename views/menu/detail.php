@@ -120,27 +120,69 @@ require_once 'views/layouts/header.php';
         <?php if (!empty($comments)): ?>
             <div class="reviews-list">
                 <?php foreach ($comments as $comment): ?>
-                    <div class="review-item">
+                    <div class="review-item" data-comment-id="<?= $comment['id'] ?>">
                         <div class="reviewer-info">
-                            <div class="reviewer-avatar">
-                                <?php if ($comment['avatar']): ?>
-                                    <img src="<?= e($comment['avatar']) ?>" alt="<?= e($comment['full_name']) ?>">
-                                <?php else: ?>
-                                    <div class="default-avatar">
-                                        <?= strtoupper(substr($comment['full_name'], 0, 1)) ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
                             <div class="reviewer-details">
                                 <h4><?= e($comment['full_name']) ?></h4>
                                 <div class="review-meta">
                                     <span class="review-date"><?= date('d/m/Y', strtotime($comment['created_at'])) ?></span>
+                                    <?php if (isset($comment['rating']) && $comment['rating']): ?>
+                                        <div class="review-rating">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <i class="fas fa-star <?= $i <= $comment['rating'] ? 'filled' : '' ?>"></i>
+                                            <?php endfor; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                         <div class="review-content">
                             <p><?= nl2br(e($comment['content'])) ?></p>
                         </div>
+                        
+                        <!-- Admin Reply Section -->
+                        <?php if (isLoggedIn() && $_SESSION['role'] === 'admin'): ?>
+                            <div class="admin-reply-section">
+                                <button type="button" class="btn-reply" onclick="toggleReplyForm(<?= $comment['id'] ?>)">
+                                    <i class="fas fa-reply"></i> Phản hồi
+                                </button>
+                                
+                                <div class="reply-form" id="replyForm<?= $comment['id'] ?>" style="display: none;">
+                                    <textarea 
+                                        id="replyContent<?= $comment['id'] ?>" 
+                                        placeholder="Nhập phản hồi của bạn..."
+                                        rows="3"
+                                    ></textarea>
+                                    <div class="reply-actions">
+                                        <button type="button" class="btn-submit-reply" onclick="submitReply(<?= $comment['id'] ?>)">
+                                            <i class="fas fa-paper-plane"></i> Gửi phản hồi
+                                        </button>
+                                        <button type="button" class="btn-cancel-reply" onclick="cancelReply(<?= $comment['id'] ?>)">
+                                            <i class="fas fa-times"></i> Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Display Existing Replies -->
+                        <?php if (isset($comment['replies']) && !empty($comment['replies'])): ?>
+                            <div class="replies-section">
+                                <?php foreach ($comment['replies'] as $reply): ?>
+                                    <div class="reply-item">
+                                        <div class="reply-header">
+                                            <strong class="admin-badge">
+                                                <i class="fas fa-shield-alt"></i> <?= e($reply['full_name']) ?>
+                                            </strong>
+                                            <span class="reply-date"><?= date('d/m/Y H:i', strtotime($reply['created_at'])) ?></span>
+                                        </div>
+                                        <div class="reply-content">
+                                            <p><?= nl2br(e($reply['content'])) ?></p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -535,34 +577,14 @@ require_once 'views/layouts/header.php';
 }
 
 .reviewer-info {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
     margin-bottom: 15px;
-}
-
-.reviewer-avatar img,
-.default-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.default-avatar {
-    background: #ff6b35;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
 }
 
 .reviewer-details h4 {
     margin: 0 0 8px 0;
     color: #333;
     font-size: 1.1rem;
+    font-weight: 600;
 }
 
 .review-meta {
@@ -570,6 +592,7 @@ require_once 'views/layouts/header.php';
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
+    margin-bottom: 10px;
 }
 
 .review-date {
@@ -577,10 +600,148 @@ require_once 'views/layouts/header.php';
     font-size: 0.85rem;
 }
 
+.review-rating {
+    display: flex;
+    gap: 2px;
+}
+
+.review-rating .fas.fa-star {
+    font-size: 0.9rem;
+    color: #ddd;
+}
+
+.review-rating .fas.fa-star.filled {
+    color: #ffc107;
+}
+
 .review-content p {
     margin: 0;
     line-height: 1.6;
     color: #444;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ff6b35;
+}
+
+/* Admin Reply Styles */
+.admin-reply-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.btn-reply {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.btn-reply:hover {
+    background: #0056b3;
+}
+
+.reply-form {
+    margin-top: 15px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.reply-form textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+.reply-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-submit-reply {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.btn-submit-reply:hover {
+    background: #1e7e34;
+}
+
+.btn-cancel-reply {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+}
+
+.btn-cancel-reply:hover {
+    background: #545b62;
+}
+
+/* Replies Display Styles */
+.replies-section {
+    margin-top: 20px;
+    padding-left: 20px;
+    border-left: 3px solid #007bff;
+}
+
+.reply-item {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.reply-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.admin-badge {
+    color: #007bff;
+    font-size: 0.95rem;
+}
+
+.admin-badge i {
+    margin-right: 5px;
+}
+
+.reply-date {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.reply-content p {
+    margin: 0;
+    line-height: 1.6;
+    color: #333;
+    background: none;
+    padding: 0;
+    border: none;
 }
 
 @media (max-width: 768px) {
@@ -589,14 +750,16 @@ require_once 'views/layouts/header.php';
         align-items: flex-start;
     }
     
-    .reviewer-info {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+    .review-meta {
+        justify-content: flex-start;
     }
     
-    .review-meta {
-        justify-content: center;
+    .reply-actions {
+        flex-direction: column;
+    }
+    
+    .replies-section {
+        padding-left: 10px;
     }
 }
 </style>
@@ -787,6 +950,72 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Admin Reply Functions
+function toggleReplyForm(commentId) {
+    const form = document.getElementById('replyForm' + commentId);
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        document.getElementById('replyContent' + commentId).focus();
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function cancelReply(commentId) {
+    const form = document.getElementById('replyForm' + commentId);
+    const textarea = document.getElementById('replyContent' + commentId);
+    
+    form.style.display = 'none';
+    textarea.value = '';
+}
+
+function submitReply(commentId) {
+    const textarea = document.getElementById('replyContent' + commentId);
+    const content = textarea.value.trim();
+    
+    if (!content) {
+        alert('Vui lòng nhập nội dung phản hồi!');
+        textarea.focus();
+        return;
+    }
+    
+    // Disable form để tránh submit nhiều lần
+    const submitBtn = document.querySelector(`#replyForm${commentId} .btn-submit-reply`);
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    
+    // Submit reply
+    fetch('index.php?page=comments&action=admin_reply', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `comment_id=${commentId}&content=${encodeURIComponent(content)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload page để hiển thị reply mới
+            location.reload();
+        } else {
+            alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+            
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Có lỗi xảy ra khi gửi phản hồi!');
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
 </script>
 
 <?php require_once 'views/layouts/footer.php'; ?>

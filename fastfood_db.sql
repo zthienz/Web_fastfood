@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS comments (
     user_id INT NOT NULL,
     post_id INT,
     product_id INT,
+    order_id INT NULL COMMENT 'Order ID for product reviews',
     parent_id INT NULL COMMENT 'For nested comments',
     content TEXT NOT NULL,
     rating INT CHECK (rating >= 1 AND rating <= 5) COMMENT 'Rating for products',
@@ -123,10 +124,12 @@ CREATE TABLE IF NOT EXISTS comments (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE,
     INDEX idx_user (user_id),
     INDEX idx_post (post_id),
     INDEX idx_product (product_id),
+    INDEX idx_order (order_id),
     INDEX idx_status (status),
     INDEX idx_parent (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

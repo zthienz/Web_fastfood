@@ -439,65 +439,30 @@
 
 <script>
 function submitAllReviews() {
-    console.log('=== Starting submitAllReviews ===');
-    
     const forms = document.querySelectorAll('.rating-form');
-    console.log('Found forms:', forms.length);
-    
     const reviews = [];
     
     // Kiểm tra xem có sản phẩm nào cần đánh giá không
     if (forms.length === 0) {
-        console.log('No forms found - all products already reviewed');
         alert('Tất cả sản phẩm trong đơn hàng này đã được đánh giá!');
         window.location.href = 'index.php?page=orders';
         return;
     }
-    
-    // Log tất cả forms trước khi kiểm tra
-    forms.forEach((form, index) => {
-        console.log(`Form ${index}:`, {
-            element: form,
-            productId: form.dataset.productId,
-            innerHTML: form.innerHTML.substring(0, 200) + '...'
-        });
-    });
     
     // Kiểm tra từng form một cách tuần tự
     for (let i = 0; i < forms.length; i++) {
         const form = forms[i];
         const productId = form.dataset.productId;
         
-        console.log(`\n--- Checking form ${i} for product ${productId} ---`);
-        
         // Tìm textarea
         let contentTextarea = form.querySelector(`textarea[name="content_${productId}"]`);
-        console.log('Content textarea (method 1):', contentTextarea);
         
         if (!contentTextarea) {
             // Thử cách khác nếu không tìm thấy
             contentTextarea = form.querySelector('textarea');
-            console.log('Content textarea (method 2):', contentTextarea);
         }
         
-        // Log tất cả inputs trong form
-        const allInputs = form.querySelectorAll('input, textarea');
-        console.log('All inputs in form:', Array.from(allInputs).map(input => ({
-            type: input.type,
-            name: input.name,
-            value: input.value,
-            checked: input.checked
-        })));
-        
-        // Debug log để kiểm tra
-        console.log('Final check results:', {
-            productId: productId,
-            contentTextarea: contentTextarea,
-            contentValue: contentTextarea ? contentTextarea.value.trim() : null
-        });
-        
         if (!contentTextarea || !contentTextarea.value.trim()) {
-            console.log('ERROR: No content provided');
             alert('Vui lòng nhập nội dung đánh giá cho sản phẩm!');
             // Focus vào textarea có vấn đề và highlight
             if (contentTextarea) {
@@ -515,19 +480,15 @@ function submitAllReviews() {
             content: contentTextarea.value.trim()
         };
         
-        console.log('Adding review:', reviewData);
         reviews.push(reviewData);
     }
     
     // Nếu không có sản phẩm nào cần đánh giá
     if (reviews.length === 0) {
-        console.log('No reviews to submit');
         alert('Tất cả sản phẩm trong đơn hàng này đã được đánh giá!');
         window.location.href = 'index.php?page=orders';
         return;
     }
-    
-    console.log('Final reviews to submit:', reviews);
     
     // Disable button and show loading
     const submitBtn = document.querySelector('.btn-submit');
@@ -539,21 +500,12 @@ function submitAllReviews() {
     formData.append('order_id', '<?= e($order['id']) ?>');
     formData.append('reviews', JSON.stringify(reviews));
     
-    console.log('Submitting to server:', {
-        order_id: '<?= e($order['id']) ?>',
-        reviews: reviews
-    });
-    
     fetch('index.php?page=comments&action=submit_order_reviews', {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        console.log('Server response status:', response.status);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Server response data:', data);
         if (data.success) {
             alert('Đánh giá đã được gửi thành công!');
             window.location.href = 'index.php?page=orders';
@@ -564,13 +516,10 @@ function submitAllReviews() {
         }
     })
     .catch(error => {
-        console.error('Fetch error:', error);
         alert('Có lỗi xảy ra khi gửi đánh giá!');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi đánh giá';
     });
-    
-    console.log('=== End submitAllReviews ===');
 }
 
 // Kiểm tra và ẩn nút submit nếu tất cả sản phẩm đã được đánh giá

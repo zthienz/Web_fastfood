@@ -32,16 +32,6 @@ class ProfileController {
             redirect('index.php?page=profile');
         }
         
-        // Debug: Hiển thị thông tin debug tạm thời
-        if (isset($_GET['debug'])) {
-            echo "<pre style='background: #f0f0f0; padding: 10px; margin: 10px;'>";
-            echo "POST data:\n";
-            print_r($_POST);
-            echo "\nFILES data:\n";
-            print_r($_FILES);
-            echo "</pre>";
-        }
-        
         $fullName = sanitize($_POST['full_name'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
         $address = sanitize($_POST['address'] ?? '');
@@ -54,9 +44,6 @@ class ProfileController {
         // Xử lý upload avatar
         $avatarPath = null;
         if (isset($_FILES['avatar']) && !empty($_FILES['avatar']['name'])) {
-            // Debug log
-            error_log("Avatar upload - FILES data: " . print_r($_FILES['avatar'], true));
-            
             if ($_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
                 $avatarPath = $this->handleAvatarUpload($_FILES['avatar']);
                 if (!$avatarPath) {
@@ -120,9 +107,6 @@ class ProfileController {
     
     private function handleAvatarUpload($file) {
         $uploadDir = 'public/images/avatars/';
-        
-        // Debug log
-        error_log("Avatar upload attempt - File: " . print_r($file, true));
         
         // Kiểm tra thư mục upload
         if (!is_dir($uploadDir)) {
