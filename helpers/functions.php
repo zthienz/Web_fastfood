@@ -15,6 +15,16 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
+// Kiểm tra quyền admin
+function isAdmin() {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+}
+
+// Thông báo lỗi cho admin khi sử dụng chức năng không được phép
+function adminRestrictionMessage() {
+    return 'Bạn là admin và không thể sử dụng chức năng này!';
+}
+
 // Redirect
 function redirect($url) {
     header("Location: $url");

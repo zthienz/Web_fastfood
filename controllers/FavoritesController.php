@@ -60,6 +60,16 @@ class FavoritesController {
             redirect('index.php?page=login');
         }
         
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            if ($this->isAjax()) {
+                echo json_encode(['success' => false, 'message' => adminRestrictionMessage()]);
+                exit;
+            }
+            setFlash('error', adminRestrictionMessage());
+            redirect($_SERVER['HTTP_REFERER'] ?? 'index.php?page=menu');
+        }
+        
         $productId = intval($_POST['product_id'] ?? $_GET['id'] ?? 0);
         $userId = $_SESSION['user_id'];
         
@@ -180,6 +190,16 @@ class FavoritesController {
             }
             setFlash('error', 'Vui lòng đăng nhập!');
             redirect('index.php?page=login');
+        }
+        
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            if ($this->isAjax()) {
+                echo json_encode(['success' => false, 'message' => adminRestrictionMessage()]);
+                exit;
+            }
+            setFlash('error', adminRestrictionMessage());
+            redirect($_SERVER['HTTP_REFERER'] ?? 'index.php?page=menu');
         }
         
         // Kiểm tra xem bảng favorites có tồn tại không

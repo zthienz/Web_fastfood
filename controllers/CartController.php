@@ -59,6 +59,17 @@ class CartController {
             redirect('index.php?page=login');
         }
         
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => adminRestrictionMessage()]);
+                exit;
+            }
+            setFlash('error', adminRestrictionMessage());
+            redirect($_SERVER['HTTP_REFERER'] ?? 'index.php?page=menu');
+        }
+        
         $id = intval($_GET['id'] ?? $_POST['id'] ?? 0);
         $quantity = intval($_GET['quantity'] ?? $_POST['quantity'] ?? 1);
         
@@ -255,6 +266,12 @@ class CartController {
             redirect('index.php?page=login');
         }
         
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            setFlash('error', adminRestrictionMessage());
+            redirect('index.php?page=cart');
+        }
+        
         $cart = $_SESSION['cart'] ?? [];
         if (empty($cart)) {
             setFlash('error', 'Giỏ hàng trống!');
@@ -328,6 +345,12 @@ class CartController {
         if (!isLoggedIn()) {
             setFlash('error', 'Vui lòng đăng nhập để đặt hàng!');
             redirect('index.php?page=login');
+        }
+        
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            setFlash('error', adminRestrictionMessage());
+            redirect('index.php?page=cart');
         }
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

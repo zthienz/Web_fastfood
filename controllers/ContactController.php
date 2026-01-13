@@ -22,6 +22,13 @@ class ContactController
             header('Location: index.php?page=contact');
             exit;
         }
+        
+        // Kiểm tra quyền admin
+        if (isAdmin()) {
+            setFlash('error', adminRestrictionMessage());
+            header('Location: index.php?page=contact');
+            exit;
+        }
 
         $name = sanitize($_POST['name'] ?? '');
         $email = sanitize($_POST['email'] ?? '');
